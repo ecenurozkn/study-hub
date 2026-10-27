@@ -1,4 +1,4 @@
-// Pastel renk paletiyle uyumlu kalan süre hesaplama, canlı geri sayım ve akıllı çalışma öneri motoru
+// Aydınlık Pastel renk paletiyle uyumlu kalan süre hesaplama, canlı geri sayım ve akıllı çalışma öneri motoru
 
 export function getCountdownInfo(targetDateStr, isCompleted = false) {
   // Mine Yeşili (Mint): Tamamlananlar için
@@ -6,9 +6,8 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     return {
       label: 'Teslim Edildi ✓',
       shortLabel: 'Tamamlandı',
-      badgeClass:
-        'bg-emerald-100/85 text-emerald-800 border-emerald-200 dark:bg-emerald-400/15 dark:text-emerald-200 dark:border-emerald-400/30',
-      dotClass: 'bg-emerald-500 dark:bg-emerald-300',
+      badgeClass: 'bg-emerald-100/85 text-emerald-800 border-emerald-200',
+      dotClass: 'bg-emerald-500',
       urgency: 'completed',
       diffHours: Infinity,
       isUnder24h: false,
@@ -19,8 +18,7 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     return {
       label: 'Tarih Belirtilmedi',
       shortLabel: 'Tarihsiz',
-      badgeClass:
-        'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+      badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
       dotClass: 'bg-slate-400',
       urgency: 'none',
       diffHours: Infinity,
@@ -46,9 +44,8 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     return {
       label: overdueText,
       shortLabel: 'Süresi Geçti',
-      badgeClass:
-        'bg-rose-100/90 text-rose-800 border-rose-200 dark:bg-rose-400/20 dark:text-rose-200 dark:border-rose-400/35',
-      dotClass: 'bg-rose-400 dark:bg-rose-300',
+      badgeClass: 'bg-rose-100/90 text-rose-800 border-rose-200',
+      dotClass: 'bg-rose-400',
       urgency: 'overdue',
       diffHours,
       isUnder24h: false,
@@ -64,9 +61,8 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     return {
       label: labelText,
       shortLabel: `${hours}s ${minutes}dk`,
-      badgeClass:
-        'bg-rose-100/95 text-rose-900 border-rose-300 animate-pulse dark:bg-rose-500/25 dark:text-rose-100 dark:border-rose-400/50',
-      dotClass: 'bg-rose-500 dark:bg-rose-300 animate-ping',
+      badgeClass: 'bg-rose-100/95 text-rose-900 border-rose-300 animate-pulse',
+      dotClass: 'bg-rose-500 animate-ping',
       urgency: 'critical_24h',
       diffHours,
       isUnder24h: true,
@@ -78,9 +74,8 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     return {
       label: `Son ${days} gün ${hours} saat • Acil`,
       shortLabel: `${days}g ${hours}s`,
-      badgeClass:
-        'bg-rose-100/85 text-rose-800 border-rose-200/90 dark:bg-rose-400/15 dark:text-rose-200 dark:border-rose-400/30',
-      dotClass: 'bg-rose-400 dark:bg-rose-300',
+      badgeClass: 'bg-rose-100/85 text-rose-800 border-rose-200/90',
+      dotClass: 'bg-rose-400',
       urgency: 'critical',
       diffHours,
       isUnder24h: false,
@@ -92,9 +87,8 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     return {
       label: `Son ${days} gün ${hours} saat`,
       shortLabel: `${days}g ${hours}s`,
-      badgeClass:
-        'bg-violet-100/80 text-violet-800 border-violet-200/90 dark:bg-violet-400/15 dark:text-violet-200 dark:border-violet-400/30',
-      dotClass: 'bg-violet-400 dark:bg-violet-300',
+      badgeClass: 'bg-violet-100/80 text-violet-800 border-violet-200/90',
+      dotClass: 'bg-violet-400',
       urgency: 'soon',
       diffHours,
       isUnder24h: false,
@@ -106,9 +100,8 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     return {
       label: `${days} gün ${hours} saat kaldı`,
       shortLabel: `${days} gün`,
-      badgeClass:
-        'bg-sky-100/80 text-sky-800 border-sky-200/90 dark:bg-sky-400/15 dark:text-sky-200 dark:border-sky-400/30',
-      dotClass: 'bg-sky-400 dark:bg-sky-300',
+      badgeClass: 'bg-sky-100/80 text-sky-800 border-sky-200/90',
+      dotClass: 'bg-sky-400',
       urgency: 'this_week',
       diffHours,
       isUnder24h: false,
@@ -118,8 +111,7 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
   return {
     label: `${days} gün ${hours} saat kaldı`,
     shortLabel: `${days} gün`,
-    badgeClass:
-      'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700',
+    badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
     dotClass: 'bg-slate-400',
     urgency: 'normal',
     diffHours,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Bell,
   BellRing,
@@ -18,6 +18,7 @@ import { formatTurkishDateTime } from '../utils/dateUtils';
 export default function NotificationCenterDrawer({
   isOpen,
   onClose,
+  currentUser,
   urgentAlerts = [],
   smartRecommendations = [],
   notificationPermission = 'default',
@@ -30,13 +31,24 @@ export default function NotificationCenterDrawer({
   onClearNotificationHistory,
   onNavigateToAlert,
 }) {
+  const activeEmail =
+    currentUser?.email ||
+    notificationSettings?.emailAddress ||
+    '';
+
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState(
-    notificationSettings?.emailAddress || 'ogrenci@universite.edu.tr'
-  );
+  const [recipientEmail, setRecipientEmail] = useState(activeEmail);
   const [customNote, setCustomNote] = useState('');
 
+  useEffect(() => {
+    if (currentUser?.email) {
+      setRecipientEmail(currentUser.email);
+    }
+  }, [currentUser?.email]);
+
   if (!isOpen) return null;
+
+  const targetRecipient = (recipientEmail || activeEmail || '').trim();
 
   const buildEmailSubject = () => {
     if (urgentAlerts.length > 0) {
@@ -56,7 +68,7 @@ export default function NotificationCenterDrawer({
                 )} (Kalan: ${a.parts.hours} saat ${a.parts.minutes} dk)`
             )
             .join('\n\n')
-        : '24 saatten az kalan acil sınav veya ödev bulunmuyor.';
+        : 'Önümüzdeki 24 saat içinde teslimi olan acil ödev veya sınav bulunmuyor.';
 
     const studyLines =
       smartRecommendations.length > 0
@@ -68,11 +80,11 @@ export default function NotificationCenterDrawer({
                 })`
             )
             .join('\n')
-        : 'Tüm konular tamamlandı.';
+        : 'Henüz bekleyen çalışma konusu bulunmuyor.';
 
-    return `Merhaba,
+    return `Merhaba ${currentUser?.name || targetRecipient},
 
-Akademik Ders ve Sınav Takip Merkezi tarafından otomatik hazırlanan 24 Saat Kala Acil Uyarı ve Günlük Çalışma Özeti aşağıdadır:
+Akademik Ders ve Sınav Takip Merkezi hesabınız (${targetRecipient}) için hazırlanan 24 Saat Kala Acil Uyarı ve Günlük Çalışma Özeti aşağıdadır:
 
 === 24 SAATTEN AZ KALAN ACİL SINAV & ÖDEVLER (${urgentAlerts.length}) ===
 ${alertLines}
@@ -84,48 +96,62 @@ Başarılar dileriz!
 Akademik Ders & Sınav Takip Merkezi`;
   };
 
-  const handleSimulatedEmailSend = (e) => {
-    e.preventDefault();
-    const targetEmail = recipientEmail.trim() || 'ogrenci@universite.edu.tr';
-    onUpdateNotificationSettings({ emailAddress: targetEmail });
+  const mailtoHref = `mailto:${encodeURIComponent(
+    targetRecipient
+  )}?subject=${encodeURIComponent(
+    buildEmailSubject()
+  )}&body=${encodeURIComponent(buildEmailBody())}`;
+
+  const handleDirect24hReminderTrigger = () => {
+    const toAddress = targetRecipient;
+    onUpdateNotificationSettings({ emailAddress: toAddress });
     onSendUrgentEmail({
-      recipient: targetEmail,
+      recipient: toAddress,
       subject: buildEmailSubject(),
       body: buildEmailBody(),
       alertCount: urgentAlerts.length,
     });
+    // Kullanıcının yerel e-posta istemcisini (Apple Mail, Gmail, Outlook) otomatik aç
+    window.location.href = mailtoHref;
+  };
+
+  const handleModalSubmit = (e) => {
+    e.preventDefault();
+    const toAddress = targetRecipient;
+    onUpdateNotificationSettings({ emailAddress: toAddress });
+    onSendUrgentEmail({
+      recipient: toAddress,
+      subject: buildEmailSubject(),
+      body: buildEmailBody(),
+      alertCount: urgentAlerts.length,
+    });
+    window.location.href = mailtoHref;
     setIsEmailModalOpen(false);
   };
 
-  const mailtoHref = `mailto:${encodeURIComponent(
-    recipientEmail.trim() || 'ogrenci@universite.edu.tr'
-  )}?subject=${encodeURIComponent(buildEmailSubject())}&body=${encodeURIComponent(
-    buildEmailBody()
-  )}`;
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs transition-opacity">
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-xs transition-opacity">
       {/* Açılır Bildirim Çekmecesi (Drawer) */}
-      <div className="flex h-full w-full max-w-lg flex-col justify-between border-l border-slate-200/90 bg-[#f8fafc] shadow-2xl dark:border-slate-800 dark:bg-[#0f172a]">
+      <div className="flex h-full w-full max-w-lg flex-col justify-between border-l border-slate-200/90 bg-[#f8fafc] shadow-2xl">
         {/* Üst Başlık */}
-        <div className="flex items-center justify-between border-b border-slate-200/80 bg-white/90 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/90">
+        <div className="flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-400/20 dark:text-rose-200">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
               <BellRing className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  Acil Bildirim & E-posta Merkezi
+                <h2 className="text-sm font-semibold text-slate-800">
+                  Acil Bildirim & 24 Saat E-posta Merkezi
                 </h2>
                 {urgentAlerts.length > 0 && (
-                  <span className="rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-900 animate-pulse dark:border-rose-400/40 dark:bg-rose-500/25 dark:text-rose-100">
+                  <span className="rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-900 animate-pulse">
                     {urgentAlerts.length} Acil (&lt;24s)
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Web Notifications API, 24 saat kala acil uyarılar ve e-posta hatırlatıcı
+              <p className="text-xs text-slate-500">
+                Aktif Hesap Alıcısı: <strong className="text-slate-700">{targetRecipient}</strong>
               </p>
             </div>
           </div>
@@ -133,7 +159,7 @@ Akademik Ders & Sınav Takip Merkezi`;
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-4 w-4" />
           </button>
@@ -141,79 +167,56 @@ Akademik Ders & Sınav Takip Merkezi`;
 
         {/* İçerik Alanı */}
         <div className="flex-1 space-y-5 overflow-y-auto p-5">
-          {/* 1. Tarayıcı Masaüstü Bildirimi & Günlük Ders Tekrarı Tetikleyici */}
-          <div className="rounded-2xl border border-violet-200/80 bg-violet-50/55 p-4 dark:border-violet-400/25 dark:bg-violet-950/20">
-            <div className="flex items-center justify-between gap-2">
+          {/* 1. Giriş Yapılan E-postaya Özel 24 Saat Hatırlatma Kartı */}
+          <div className="rounded-2xl border border-rose-200/90 bg-rose-50/55 p-4 shadow-2xs">
+            <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-violet-700 dark:text-violet-300" />
-                <span className="text-xs font-semibold text-violet-950 dark:text-violet-100">
-                  Masaüstü Bildirimleri & Günlük Ders Tekrarı
-                </span>
+                <Mail className="h-4 w-4 text-rose-600 shrink-0" />
+                <div>
+                  <h3 className="text-xs font-semibold text-rose-950">
+                    Giriş Yapılan E-postaya Özel 24 Saat Hatırlatıcı
+                  </h3>
+                  <p className="text-[11px] text-slate-600">
+                    Alıcı (To): <code className="rounded bg-white px-1.5 py-0.5 font-mono font-semibold text-rose-900">{targetRecipient}</code>
+                  </p>
+                </div>
               </div>
-
-              <span
-                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
-                  notificationPermission === 'granted'
-                    ? 'border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-200'
-                    : 'border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-200'
-                }`}
-              >
-                {notificationPermission === 'granted'
-                  ? 'Tarayıcı İzni: Aktif'
-                  : notificationPermission === 'denied'
-                  ? 'İzin Engellendi (Simülasyon Aktif)'
-                  : 'İzin Bekleniyor'}
-              </span>
             </div>
-
-            <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-300">
-              Günün öncelikli çalışma konularını masaüstü bildirimi olarak anında tetikleyebilirsiniz.
-            </p>
 
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={onTriggerDailyStudyNotification}
-                className="inline-flex items-center gap-1.5 rounded-full border border-violet-300 bg-violet-100 px-3.5 py-1.5 text-xs font-semibold text-violet-900 shadow-xs transition hover:bg-violet-200/80 dark:border-violet-400/40 dark:bg-violet-400/25 dark:text-violet-100"
+                onClick={handleDirect24hReminderTrigger}
+                className="inline-flex items-center gap-1.5 rounded-full border border-rose-300 bg-rose-100 px-4 py-1.5 text-xs font-semibold text-rose-900 shadow-2xs transition hover:bg-rose-200/80"
               >
-                <Bell className="h-3.5 w-3.5" />
-                <span>"Günlük Ders Tekrarı" Bildirimi Gönder</span>
+                <Send className="h-3.5 w-3.5" />
+                <span>24 Saat Hatırlatması Gönder ({targetRecipient})</span>
               </button>
-
-              {notificationPermission !== 'granted' && (
-                <button
-                  type="button"
-                  onClick={onRequestPermission}
-                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-sky-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                >
-                  <span>Tarayıcı Bildirim İzni İste</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 2. Son 24 Saat Kalan Ödev ve Sınav Uyarıları */}
-          <div className="rounded-2xl border border-rose-200/85 bg-white p-4 shadow-xs dark:border-rose-400/25 dark:bg-slate-800/70">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-300" />
-                <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-100">
-                  24 Saatten Az Kalan Sınav & Ödev Uyarıları ({urgentAlerts.length})
-                </h3>
-              </div>
 
               <button
                 type="button"
                 onClick={() => setIsEmailModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-100/90 px-3 py-1 text-[11px] font-semibold text-rose-900 transition hover:bg-rose-200/80 dark:border-rose-400/35 dark:bg-rose-500/20 dark:text-rose-100"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-sky-300"
               >
-                <Mail className="h-3 w-3" />
-                <span>24 Saat E-postası Hazırla</span>
+                <ExternalLink className="h-3.5 w-3.5 text-sky-600" />
+                <span>Şablonu Önizle / Düzenle</span>
               </button>
+            </div>
+          </div>
+
+          {/* 2. Son 24 Saat Kalan Ödev ve Sınav Uyarıları */}
+          <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-2xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-rose-600" />
+                <h3 className="text-xs font-semibold text-slate-800">
+                  24 Saatten Az Kalan Sınav & Ödev Uyarıları ({urgentAlerts.length})
+                </h3>
+              </div>
             </div>
 
             {urgentAlerts.length === 0 ? (
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/60 px-3.5 py-2.5 text-xs text-emerald-800 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-200">
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/60 px-3.5 py-2.5 text-xs text-emerald-800">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span>Önümüzdeki 24 saat içinde acil sınav veya ödev teslimi yok.</span>
               </div>
@@ -228,19 +231,19 @@ Akademik Ders & Sınav Takip Merkezi`;
                         onClose();
                       }
                     }}
-                    className="cursor-pointer rounded-xl border border-rose-200/90 bg-rose-50/65 p-3 transition hover:border-rose-300 dark:border-rose-400/30 dark:bg-rose-950/25"
+                    className="cursor-pointer rounded-xl border border-rose-200/90 bg-rose-50/65 p-3 transition hover:border-rose-300"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-900 animate-pulse dark:border-rose-400/50 dark:bg-rose-500/30 dark:text-rose-100">
+                        <span className="rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-900 animate-pulse">
                           {alert.typeLabel}
                         </span>
-                        <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">
+                        <span className="font-mono text-xs font-bold text-slate-800">
                           {alert.courseCode}
                         </span>
                       </div>
 
-                      <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-rose-800 dark:text-rose-200">
+                      <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-rose-800">
                         <Clock className="h-3 w-3" />
                         {alert.isOverdue
                           ? 'Süresi Geçti!'
@@ -248,10 +251,10 @@ Akademik Ders & Sınav Takip Merkezi`;
                       </span>
                     </div>
 
-                    <p className="mt-1.5 text-xs font-medium text-slate-800 dark:text-slate-100">
+                    <p className="mt-1.5 text-xs font-medium text-slate-800">
                       {alert.title}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-0.5 text-[11px] text-slate-500">
                       Tarih: {formatTurkishDateTime(alert.targetDate)}
                       {alert.location ? ` • Salon: ${alert.location}` : ''}
                     </p>
@@ -259,40 +262,62 @@ Akademik Ders & Sınav Takip Merkezi`;
                 ))}
               </div>
             )}
+          </div>
 
-            {/* Otomatik E-posta Ayarı */}
-            <div className="mt-3.5 flex flex-col gap-2 border-t border-slate-100 pt-3 dark:border-slate-700/60 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                <Mail className="h-3.5 w-3.5 text-sky-500" />
-                <span>Hatırlatma E-postası:</span>
-                <strong className="font-mono text-slate-800 dark:text-slate-100">
-                  {notificationSettings?.emailAddress || 'ogrenci@universite.edu.tr'}
-                </strong>
+          {/* 3. Tarayıcı Masaüstü Bildirimi & Günlük Ders Tekrarı Tetikleyici */}
+          <div className="rounded-2xl border border-violet-200/80 bg-violet-50/55 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-violet-700" />
+                <span className="text-xs font-semibold text-violet-950">
+                  Masaüstü Bildirimleri & Günlük Ders Tekrarı
+                </span>
               </div>
 
-              <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-                <input
-                  type="checkbox"
-                  checked={Boolean(notificationSettings?.autoEmailUnder24h)}
-                  onChange={(e) =>
-                    onUpdateNotificationSettings({
-                      autoEmailUnder24h: e.target.checked,
-                    })
-                  }
-                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-400"
-                />
-                <span>24 Saat Kala Otomatik Hazırla</span>
-              </label>
+              <span
+                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
+                  notificationPermission === 'granted'
+                    ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                    : 'border-amber-200 bg-amber-100 text-amber-800'
+                }`}
+              >
+                {notificationPermission === 'granted'
+                  ? 'Tarayıcı İzni: Aktif'
+                  : notificationPermission === 'denied'
+                  ? 'Uygulama İçi Bildirim Aktif'
+                  : 'İzin Bekleniyor'}
+              </span>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onTriggerDailyStudyNotification}
+                className="inline-flex items-center gap-1.5 rounded-full border border-violet-300 bg-violet-100 px-3.5 py-1.5 text-xs font-semibold text-violet-900 shadow-2xs transition hover:bg-violet-200/80"
+              >
+                <Bell className="h-3.5 w-3.5" />
+                <span>"Günlük Ders Tekrarı" Bildirimi Gönder</span>
+              </button>
+
+              {notificationPermission !== 'granted' && (
+                <button
+                  type="button"
+                  onClick={onRequestPermission}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-sky-300"
+                >
+                  <span>Tarayıcı Bildirim İzni İste</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* 3. Bildirim ve E-posta Gönderim Geçmişi */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-800/70">
+          {/* 4. Bildirim ve E-posta Gönderim Geçmişi */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <History className="h-4 w-4 text-sky-600 dark:text-sky-300" />
-                <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-100">
-                  Bildirim & E-posta Geçmişi ({notificationHistory.length})
+                <History className="h-4 w-4 text-sky-600" />
+                <h3 className="text-xs font-semibold text-slate-800">
+                  Kişisel Bildirim & E-posta Geçmişi ({notificationHistory.length})
                 </h3>
               </div>
 
@@ -317,14 +342,14 @@ Akademik Ders & Sınav Takip Merkezi`;
                 {notificationHistory.slice(0, 8).map((log) => (
                   <div
                     key={log.id}
-                    className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-2.5 text-xs dark:border-slate-700/60 dark:bg-slate-900/50"
+                    className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-2.5 text-xs"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                           log.type?.startsWith('email')
-                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-400/20 dark:text-rose-200'
-                            : 'bg-sky-100 text-sky-800 dark:bg-sky-400/20 dark:text-sky-200'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-sky-100 text-sky-800'
                         }`}
                       >
                         {log.type?.startsWith('email')
@@ -335,15 +360,15 @@ Akademik Ders & Sınav Takip Merkezi`;
                         {formatTurkishDateTime(log.createdAt)}
                       </span>
                     </div>
-                    <p className="mt-1 font-semibold text-slate-800 dark:text-slate-100">
+                    <p className="mt-1 font-semibold text-slate-800">
                       {log.title}
                     </p>
                     {log.recipient && (
-                      <p className="text-[11px] text-sky-600 dark:text-sky-300">
+                      <p className="text-[11px] text-sky-600">
                         Alıcı: {log.recipient}
                       </p>
                     )}
-                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-0.5 text-[11px] text-slate-500">
                       {log.summary}
                     </p>
                   </div>
@@ -354,11 +379,11 @@ Akademik Ders & Sınav Takip Merkezi`;
         </div>
 
         {/* Alt Kapatma Çubuğu */}
-        <div className="border-t border-slate-200/80 bg-white/90 px-5 py-3 text-right dark:border-slate-800 dark:bg-slate-900/90">
+        <div className="border-t border-slate-200/80 bg-white/95 px-5 py-3 text-right">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-slate-200 bg-slate-100 px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-full border border-slate-200 bg-slate-100 px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
           >
             Kapat
           </button>
@@ -367,16 +392,16 @@ Akademik Ders & Sınav Takip Merkezi`;
 
       {/* E-posta Gönderim & Önizleme Modalı */}
       {isEmailModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
           <form
-            onSubmit={handleSimulatedEmailSend}
-            className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-800"
+            onSubmit={handleModalSubmit}
+            className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-700">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-rose-500 dark:text-rose-300" />
-                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  24 Saat Kala Acil Hatırlatma E-postası Gönderimi
+                <Mail className="h-4 w-4 text-rose-500" />
+                <h3 className="text-sm font-semibold text-slate-800">
+                  24 Saat Kala Acil Hatırlatma E-postası Şablonu
                 </h3>
               </div>
               <button
@@ -390,77 +415,76 @@ Akademik Ders & Sınav Takip Merkezi`;
 
             <div className="mt-4 space-y-3">
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  Alıcı Öğrenci E-posta Adresi *
+                <label className="block text-[11px] font-medium text-slate-500">
+                  Alıcı (Oturum Açmış Kullanıcı E-postası) *
                 </label>
                 <input
                   type="email"
                   required
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="ogrenci@universite.edu.tr"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800 focus:border-sky-300 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                <label className="block text-[11px] font-medium text-slate-500">
                   E-posta Konusu
                 </label>
                 <input
                   type="text"
                   readOnly
                   value={buildEmailSubject()}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-3 py-1.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-3 py-1.5 text-xs font-medium text-slate-700"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  Otomatik Hazırlanan E-posta İçeriği Önizlemesi
+                <label className="block text-[11px] font-medium text-slate-500">
+                  Hazır E-posta Şablonu Önizlemesi
                 </label>
-                <pre className="mt-1 max-h-52 overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-[11px] leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                <pre className="mt-1 max-h-52 overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-[11px] leading-relaxed text-slate-700">
                   {buildEmailBody()}
                 </pre>
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  Kendinize Ek Hatırlatma Notu (İsteğe Bağlı)
+                <label className="block text-[11px] font-medium text-slate-500">
+                  Ek Hatırlatma Notu (İsteğe Bağlı)
                 </label>
                 <input
                   type="text"
                   value={customNote}
                   onChange={(e) => setCustomNote(e.target.value)}
-                  placeholder="Örn: Kimlik kartını ve A4 el yazısı formül kağıdını çantaya koymayı unutma!"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  placeholder="Örn: Sınav giriş belgesini ve A4 formül kağıdını yanına al!"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-700">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
               <a
                 href={mailtoHref}
-                className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-100/80 px-3.5 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-200/80 dark:border-sky-400/30 dark:bg-sky-400/20 dark:text-sky-100"
+                className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-100/80 px-3.5 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-200/80"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                <span>E-posta Uygulamasında Aç (mailto:)</span>
+                <span>Doğrudan Mail İstemcisini Aç (mailto:)</span>
               </a>
 
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsEmailModalOpen(false)}
-                  className="rounded-full px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                  className="rounded-full px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700"
                 >
                   Vazgeç
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-emerald-900 shadow-xs hover:bg-emerald-200 dark:border-emerald-400/35 dark:bg-emerald-400/20 dark:text-emerald-100"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-emerald-900 shadow-2xs hover:bg-emerald-200"
                 >
                   <Send className="h-3.5 w-3.5" />
-                  <span>Şimdi Gönder & Geçmişe Kaydet</span>
+                  <span>24 Saat Hatırlatması Gönder</span>
                 </button>
               </div>
             </div>

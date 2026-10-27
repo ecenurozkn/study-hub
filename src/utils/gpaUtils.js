@@ -38,25 +38,25 @@ export function scoreToLetterGrade(score) {
 }
 
 /**
- * Harf notu rozeti için pastel Tailwind sınıfları
+ * Harf notu rozeti için aydınlık pastel Tailwind sınıfları
  */
 export function getGradeBadgeClasses(grade) {
   switch (grade) {
     case 'AA':
     case 'BA':
-      return 'bg-emerald-100/90 text-emerald-800 border-emerald-200/90 dark:bg-emerald-400/15 dark:text-emerald-200 dark:border-emerald-400/30';
+      return 'bg-emerald-100/90 text-emerald-800 border-emerald-200/90';
     case 'BB':
     case 'CB':
-      return 'bg-sky-100/90 text-sky-800 border-sky-200/90 dark:bg-sky-400/15 dark:text-sky-200 dark:border-sky-400/30';
+      return 'bg-sky-100/90 text-sky-800 border-sky-200/90';
     case 'CC':
-      return 'bg-violet-100/90 text-violet-800 border-violet-200/90 dark:bg-violet-400/15 dark:text-violet-200 dark:border-violet-400/30';
+      return 'bg-violet-100/90 text-violet-800 border-violet-200/90';
     case 'DC':
     case 'DD':
-      return 'bg-amber-100/90 text-amber-800 border-amber-200/90 dark:bg-amber-400/15 dark:text-amber-200 dark:border-amber-400/30';
+      return 'bg-amber-100/90 text-amber-800 border-amber-200/90';
     case 'FF':
-      return 'bg-rose-100/90 text-rose-800 border-rose-200/90 dark:bg-rose-400/15 dark:text-rose-200 dark:border-rose-400/30';
+      return 'bg-rose-100/90 text-rose-800 border-rose-200/90';
     default:
-      return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+      return 'bg-slate-100 text-slate-700 border-slate-200';
   }
 }
 
@@ -89,14 +89,12 @@ export function calculateCourseGradeSummary(assessments = [], targetGradeOverrid
     }
   });
 
-  // Eğer bazı kalemler henüz girilmediyse hem mevcut toplamı hem de 100'e normalize edilmiş tahmini hesapla
   const normalizedScore =
     completedWeight > 0
       ? Number(((weightedSum / completedWeight) * 100).toFixed(1))
       : null;
   const rawTotalScore = Number(weightedSum.toFixed(1));
 
-  // Tüm ağırlıklar girildiyse rawTotalScore, kısmi girildiyse normalizedScore baz alınır
   const effectiveScore =
     completedWeight >= 99.5 ? rawTotalScore : normalizedScore;
 

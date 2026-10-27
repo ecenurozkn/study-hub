@@ -16,18 +16,15 @@ import { getCountdownInfo, formatTurkishDateTime } from '../utils/dateUtils';
 const PRIORITY_CONFIG = {
   high: {
     label: 'Öncelikli',
-    badge:
-      'bg-rose-100/80 text-rose-800 border-rose-200/90 dark:bg-rose-400/15 dark:text-rose-200 dark:border-rose-400/30',
+    badge: 'bg-rose-100/80 text-rose-800 border-rose-200/90',
   },
   medium: {
     label: 'Orta',
-    badge:
-      'bg-violet-100/80 text-violet-800 border-violet-200/90 dark:bg-violet-400/15 dark:text-violet-200 dark:border-violet-400/30',
+    badge: 'bg-violet-100/80 text-violet-800 border-violet-200/90',
   },
   low: {
     label: 'Normal',
-    badge:
-      'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+    badge: 'bg-slate-100 text-slate-600 border-slate-200',
   },
 };
 
@@ -37,27 +34,24 @@ const STATUS_OPTIONS = [
     label: 'Yapılacak',
     icon: Circle,
     pillClass:
-      'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400',
-    activeClass:
-      'border-slate-300 bg-slate-200/80 text-slate-800 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100',
+      'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300',
+    activeClass: 'border-slate-300 bg-slate-200/80 text-slate-800',
   },
   {
     id: 'in_progress',
     label: 'Devam Ediyor',
     icon: CircleDot,
     pillClass:
-      'border-slate-200 bg-slate-50 text-slate-500 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400',
-    activeClass:
-      'border-sky-200 bg-sky-100/90 text-sky-900 dark:border-sky-400/35 dark:bg-sky-400/20 dark:text-sky-100',
+      'border-slate-200 bg-slate-50 text-slate-500 hover:border-sky-200 hover:text-sky-700',
+    activeClass: 'border-sky-200 bg-sky-100/90 text-sky-900',
   },
   {
     id: 'done',
     label: 'Teslim Edildi',
     icon: CheckCircle2,
     pillClass:
-      'border-slate-200 bg-slate-50 text-slate-500 hover:border-emerald-200 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400',
-    activeClass:
-      'border-emerald-200 bg-emerald-100/90 text-emerald-900 dark:border-emerald-400/35 dark:bg-emerald-400/20 dark:text-emerald-100',
+      'border-slate-200 bg-slate-50 text-slate-500 hover:border-emerald-200 hover:text-emerald-700',
+    activeClass: 'border-emerald-200 bg-emerald-100/90 text-emerald-900',
   },
 ];
 
@@ -73,9 +67,9 @@ export default function AssignmentsSection({
   const [statusFilter, setStatusFilter] = useState('all');
 
   const defaultDue = () => {
-    const d = new Date(Date.now() + 48 * 3600 * 1000);
+    const d = new Date(Date.now() + 20 * 3600 * 1000);
     const pad = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T23:59`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
   const [formData, setFormData] = useState({
@@ -149,21 +143,21 @@ export default function AssignmentsSection({
       {/* Başlık + Durum Filtresi + Yeni Ödev */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100/80 text-rose-700 dark:bg-rose-400/15 dark:text-rose-200">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100/80 text-rose-700">
             <ClipboardCheck className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
+            <h2 className="text-base font-semibold text-slate-800">
               Ödev ve Proje Takipçisi
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500">
               Teslim tarihine kalan süre sayaçları ve tamamlanma durumları
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center rounded-full border border-slate-200/90 bg-white p-1 shadow-sm dark:border-slate-700/80 dark:bg-slate-800/80">
+          <div className="flex items-center rounded-full border border-slate-200/90 bg-white p-1 shadow-2xs">
             {[
               { id: 'all', label: 'Tümü' },
               { id: 'todo', label: 'Yapılacak' },
@@ -176,8 +170,8 @@ export default function AssignmentsSection({
                 onClick={() => setStatusFilter(st.id)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   statusFilter === st.id
-                    ? 'bg-sky-100 text-sky-900 dark:bg-sky-400/20 dark:text-sky-100'
-                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                    ? 'bg-sky-100 text-sky-900'
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 {st.label}
@@ -187,8 +181,14 @@ export default function AssignmentsSection({
 
           <button
             type="button"
+            disabled={courses.length === 0}
             onClick={openCreateForm}
-            className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-100/90 px-4 py-1.5 text-xs font-medium text-sky-900 shadow-sm transition hover:bg-sky-200/80 dark:border-sky-400/30 dark:bg-sky-400/20 dark:text-sky-100"
+            title={
+              courses.length === 0
+                ? 'Ödev eklemek için önce bir ders oluşturun'
+                : 'Yeni Ödev Ekle'
+            }
+            className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-100/90 px-4 py-1.5 text-xs font-medium text-sky-900 shadow-2xs transition hover:bg-sky-200/80 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Yeni Ödev Ekle</span>
@@ -197,19 +197,19 @@ export default function AssignmentsSection({
       </div>
 
       {/* Ödev Ekle / Düzenle Formu */}
-      {isFormOpen && (
+      {isFormOpen && courses.length > 0 && (
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-700/80 dark:bg-slate-800/80"
+          className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs"
         >
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-700/70">
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="text-sm font-semibold text-slate-800">
               {editingId ? 'Ödevi Düzenle' : 'Yeni Ödev / Proje Ekle'}
             </h3>
             <button
               type="button"
               onClick={() => setIsFormOpen(false)}
-              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700"
+              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
               <X className="h-4 w-4" />
             </button>
@@ -217,7 +217,7 @@ export default function AssignmentsSection({
 
           <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 İlgili Ders *
               </label>
               <select
@@ -226,7 +226,7 @@ export default function AssignmentsSection({
                 onChange={(e) =>
                   setFormData({ ...formData, courseId: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               >
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -237,7 +237,7 @@ export default function AssignmentsSection({
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Ödev / Proje Başlığı *
               </label>
               <input
@@ -248,12 +248,12 @@ export default function AssignmentsSection({
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Son Teslim Tarihi ve Saati *
               </label>
               <input
@@ -263,12 +263,12 @@ export default function AssignmentsSection({
                 onChange={(e) =>
                   setFormData({ ...formData, dueDate: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Açıklama / Teslim Notu
               </label>
               <input
@@ -278,12 +278,12 @@ export default function AssignmentsSection({
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Önem Derecesi
               </label>
               <select
@@ -291,7 +291,7 @@ export default function AssignmentsSection({
                 onChange={(e) =>
                   setFormData({ ...formData, priority: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               >
                 <option value="high">Öncelikli</option>
                 <option value="medium">Orta</option>
@@ -300,7 +300,7 @@ export default function AssignmentsSection({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Durum
               </label>
               <select
@@ -308,7 +308,7 @@ export default function AssignmentsSection({
                 onChange={(e) =>
                   setFormData({ ...formData, status: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               >
                 <option value="todo">Yapılacak</option>
                 <option value="in_progress">Devam Ediyor</option>
@@ -321,13 +321,13 @@ export default function AssignmentsSection({
             <button
               type="button"
               onClick={() => setIsFormOpen(false)}
-              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
             >
               İptal
             </button>
             <button
               type="submit"
-              className="rounded-full border border-sky-200 bg-sky-100 px-4 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-200/80 dark:border-sky-400/30 dark:bg-sky-400/20 dark:text-sky-100"
+              className="rounded-full border border-sky-200 bg-sky-100 px-4 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-200/80"
             >
               {editingId ? 'Güncelle' : 'Ödevi Kaydet'}
             </button>
@@ -337,9 +337,11 @@ export default function AssignmentsSection({
 
       {/* Ödev Kartları Listesi */}
       {filteredAssignments.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-8 text-center dark:border-slate-800 dark:bg-slate-900/40">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Seçili filtreye uygun ödev bulunamadı.
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-8 text-center">
+          <p className="text-sm text-slate-500">
+            {courses.length === 0
+              ? 'Ödev ekleyebilmek için önce yukarıdan bir ders oluşturun.'
+              : 'Henüz ödev eklenmemiş. "Yeni Ödev Ekle" butonuyla teslim tarihlerini takip etmeye başlayın.'}
           </p>
         </div>
       ) : (
@@ -358,10 +360,10 @@ export default function AssignmentsSection({
             return (
               <div
                 key={asg.id}
-                className={`rounded-2xl border bg-white p-4 sm:p-5 shadow-sm transition dark:bg-slate-800/60 ${
+                className={`rounded-2xl border bg-white p-4 sm:p-5 shadow-2xs transition ${
                   asg.status === 'done'
-                    ? 'border-slate-200/60 opacity-75 dark:border-slate-800'
-                    : 'border-slate-200/80 hover:border-slate-300 dark:border-slate-700/70'
+                    ? 'border-slate-200/60 opacity-75'
+                    : 'border-slate-200/80 hover:border-slate-300'
                 }`}
               >
                 <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
@@ -392,21 +394,24 @@ export default function AssignmentsSection({
                     <h3
                       className={`text-sm font-semibold sm:text-base ${
                         asg.status === 'done'
-                          ? 'line-through text-slate-400 dark:text-slate-500'
-                          : 'text-slate-800 dark:text-slate-100'
+                          ? 'line-through text-slate-400'
+                          : 'text-slate-800'
                       }`}
                     >
                       {asg.title}
                     </h3>
 
                     {asg.description && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500">
                         {asg.description}
                       </p>
                     )}
 
                     <p className="text-[11px] text-slate-400">
-                      Teslim: <span className="font-medium text-slate-600 dark:text-slate-300">{formatTurkishDateTime(asg.dueDate)}</span>
+                      Teslim:{' '}
+                      <span className="font-medium text-slate-600">
+                        {formatTurkishDateTime(asg.dueDate)}
+                      </span>
                     </p>
                   </div>
 
@@ -434,12 +439,12 @@ export default function AssignmentsSection({
                       })}
                     </div>
 
-                    <div className="flex items-center gap-1 border-l border-slate-100 pl-2 dark:border-slate-700">
+                    <div className="flex items-center gap-1 border-l border-slate-100 pl-2">
                       <button
                         type="button"
                         onClick={() => openEditForm(asg)}
                         title="Ödevi Düzenle"
-                        className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                        className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
@@ -447,7 +452,7 @@ export default function AssignmentsSection({
                         type="button"
                         onClick={() => onDeleteAssignment(asg.id)}
                         title="Ödevi Sil"
-                        className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/15 dark:hover:text-rose-300"
+                        className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
