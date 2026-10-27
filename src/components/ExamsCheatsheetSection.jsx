@@ -34,7 +34,7 @@ function renderCheatsheetPreview(text) {
       return (
         <h4
           key={index}
-          className="mt-2 mb-1.5 border-b border-violet-200/70 pb-1 text-sm font-semibold text-violet-800 dark:border-violet-400/20 dark:text-violet-200 first:mt-0"
+          className="mt-2 mb-1.5 border-b border-violet-200/70 pb-1 text-sm font-semibold text-violet-800 first:mt-0"
         >
           {trimmed.slice(2)}
         </h4>
@@ -44,7 +44,7 @@ function renderCheatsheetPreview(text) {
       return (
         <h5
           key={index}
-          className="mt-3 mb-1 text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300"
+          className="mt-3 mb-1 text-xs font-semibold uppercase tracking-wider text-sky-700"
         >
           {trimmed.slice(3)}
         </h5>
@@ -56,15 +56,15 @@ function renderCheatsheetPreview(text) {
       return (
         <div
           key={index}
-          className="flex items-start gap-2 py-0.5 text-xs text-slate-700 dark:text-slate-200"
+          className="flex items-start gap-2 py-0.5 text-xs text-slate-700"
         >
-          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400 dark:bg-violet-300" />
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
           <span className="font-mono leading-relaxed">
             {parts.map((part, i) =>
               part.startsWith('**') && part.endsWith('**') ? (
                 <strong
                   key={i}
-                  className="rounded bg-violet-100/80 px-1 font-semibold text-violet-900 dark:bg-violet-400/20 dark:text-violet-100"
+                  className="rounded bg-violet-100/80 px-1 font-semibold text-violet-900"
                 >
                   {part.slice(2, -2)}
                 </strong>
@@ -82,7 +82,7 @@ function renderCheatsheetPreview(text) {
     return (
       <p
         key={index}
-        className="py-0.5 font-mono text-xs leading-relaxed text-slate-600 dark:text-slate-300"
+        className="py-0.5 font-mono text-xs leading-relaxed text-slate-600"
       >
         {line}
       </p>
@@ -104,9 +104,9 @@ export default function ExamsCheatsheetSection({
   const [newScopeInputByExam, setNewScopeInputByExam] = useState({});
 
   const defaultExamDate = () => {
-    const d = new Date(Date.now() + 5 * 24 * 3600 * 1000);
+    const d = new Date(Date.now() + 20 * 3600 * 1000);
     const pad = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T10:00`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`;
   };
 
   const [newExamForm, setNewExamForm] = useState({
@@ -187,14 +187,14 @@ export default function ExamsCheatsheetSection({
       {/* Başlık ve Yeni Sınav Ekle */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-100/80 text-violet-700 dark:bg-violet-400/15 dark:text-violet-200">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-100/80 text-violet-700">
             <FileSpreadsheet className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
+            <h2 className="text-base font-semibold text-slate-800">
               Sınav Detayları ve Cheatsheet (Formül Kağıdı) Merkezi
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500">
               Sınav tarihi/yeri, sınav kapsamı, cheatsheet izin kuralları ve dijital formül alanı
             </p>
           </div>
@@ -202,6 +202,7 @@ export default function ExamsCheatsheetSection({
 
         <button
           type="button"
+          disabled={courses.length === 0}
           onClick={() => {
             setNewExamForm((prev) => ({
               ...prev,
@@ -209,7 +210,12 @@ export default function ExamsCheatsheetSection({
             }));
             setIsCreateOpen(!isCreateOpen);
           }}
-          className="inline-flex items-center gap-1.5 self-start rounded-full border border-sky-200 bg-sky-100/90 px-4 py-1.5 text-xs font-medium text-sky-900 shadow-sm transition hover:bg-sky-200/80 dark:border-sky-400/30 dark:bg-sky-400/20 dark:text-sky-100 sm:self-center"
+          title={
+            courses.length === 0
+              ? 'Sınav kartı eklemek için önce bir ders oluşturun'
+              : 'Yeni Sınav Kartı Ekle'
+          }
+          className="inline-flex items-center gap-1.5 self-start rounded-full border border-sky-200 bg-sky-100/90 px-4 py-1.5 text-xs font-medium text-sky-900 shadow-2xs transition hover:bg-sky-200/80 disabled:cursor-not-allowed disabled:opacity-50 sm:self-center"
         >
           <Plus className="h-3.5 w-3.5" />
           <span>Yeni Sınav Kartı Ekle</span>
@@ -217,19 +223,19 @@ export default function ExamsCheatsheetSection({
       </div>
 
       {/* Yeni Sınav Ekleme Formu */}
-      {isCreateOpen && (
+      {isCreateOpen && courses.length > 0 && (
         <form
           onSubmit={handleCreateExam}
-          className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-700/80 dark:bg-slate-800/80"
+          className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs"
         >
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-700/70">
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="text-sm font-semibold text-slate-800">
               Yeni Sınav ve Cheatsheet Kartı Oluştur
             </h3>
             <button
               type="button"
               onClick={() => setIsCreateOpen(false)}
-              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700"
+              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
               <X className="h-4 w-4" />
             </button>
@@ -237,7 +243,7 @@ export default function ExamsCheatsheetSection({
 
           <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Ders *
               </label>
               <select
@@ -246,7 +252,7 @@ export default function ExamsCheatsheetSection({
                 onChange={(e) =>
                   setNewExamForm({ ...newExamForm, courseId: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               >
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -257,7 +263,7 @@ export default function ExamsCheatsheetSection({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Sınav Türü *
               </label>
               <input
@@ -268,12 +274,12 @@ export default function ExamsCheatsheetSection({
                 onChange={(e) =>
                   setNewExamForm({ ...newExamForm, examType: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Sınav Tarihi ve Saati *
               </label>
               <input
@@ -283,12 +289,12 @@ export default function ExamsCheatsheetSection({
                 onChange={(e) =>
                   setNewExamForm({ ...newExamForm, examDate: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Sınav Yeri & Ağırlık (%)
               </label>
               <div className="mt-1 flex gap-2">
@@ -299,7 +305,7 @@ export default function ExamsCheatsheetSection({
                   onChange={(e) =>
                     setNewExamForm({ ...newExamForm, location: e.target.value })
                   }
-                  className="w-2/3 rounded-xl border border-slate-200 bg-slate-50/70 px-2.5 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                  className="w-2/3 rounded-xl border border-slate-200 bg-slate-50/70 px-2.5 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
                 />
                 <input
                   type="number"
@@ -310,13 +316,13 @@ export default function ExamsCheatsheetSection({
                   onChange={(e) =>
                     setNewExamForm({ ...newExamForm, weight: e.target.value })
                   }
-                  className="w-1/3 rounded-xl border border-slate-200 bg-slate-50/70 px-2.5 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                  className="w-1/3 rounded-xl border border-slate-200 bg-slate-50/70 px-2.5 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Cheatsheet İzni Var mı?
               </label>
               <div className="mt-1 flex gap-2">
@@ -327,8 +333,8 @@ export default function ExamsCheatsheetSection({
                   }
                   className={`flex-1 rounded-full border py-1.5 text-xs font-medium transition ${
                     newExamForm.cheatsheetAllowed
-                      ? 'border-emerald-200 bg-emerald-100 text-emerald-900 dark:border-emerald-400/35 dark:bg-emerald-400/20 dark:text-emerald-100'
-                      : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-900'
+                      ? 'border-emerald-200 bg-emerald-100 text-emerald-900'
+                      : 'border-slate-200 bg-slate-50 text-slate-500'
                   }`}
                 >
                   Evet (Serbest)
@@ -340,8 +346,8 @@ export default function ExamsCheatsheetSection({
                   }
                   className={`flex-1 rounded-full border py-1.5 text-xs font-medium transition ${
                     !newExamForm.cheatsheetAllowed
-                      ? 'border-rose-200 bg-rose-100 text-rose-900 dark:border-rose-400/35 dark:bg-rose-400/20 dark:text-rose-100'
-                      : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-900'
+                      ? 'border-rose-200 bg-rose-100 text-rose-900'
+                      : 'border-slate-200 bg-slate-50 text-slate-500'
                   }`}
                 >
                   Hayır (Yasak)
@@ -350,7 +356,7 @@ export default function ExamsCheatsheetSection({
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Cheatsheet Sayfa & Format Kuralı
               </label>
               <input
@@ -363,12 +369,12 @@ export default function ExamsCheatsheetSection({
                     cheatsheetRules: e.target.value,
                   })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Hesap Makinesi Kuralı
               </label>
               <input
@@ -381,12 +387,12 @@ export default function ExamsCheatsheetSection({
                     calculatorRule: e.target.value,
                   })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Sınav Kapsamı (Her satıra bir ünite/konu)
               </label>
               <textarea
@@ -396,12 +402,12 @@ export default function ExamsCheatsheetSection({
                 onChange={(e) =>
                   setNewExamForm({ ...newExamForm, scopeText: e.target.value })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Başlangıç Dijital Cheatsheet Notları (Markdown / Formül)
               </label>
               <textarea
@@ -413,7 +419,7 @@ export default function ExamsCheatsheetSection({
                     cheatsheetContent: e.target.value,
                   })
                 }
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 font-mono text-xs text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 font-mono text-xs text-slate-800 focus:border-sky-300 focus:outline-none"
               />
             </div>
           </div>
@@ -422,13 +428,13 @@ export default function ExamsCheatsheetSection({
             <button
               type="button"
               onClick={() => setIsCreateOpen(false)}
-              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
             >
               İptal
             </button>
             <button
               type="submit"
-              className="rounded-full border border-sky-200 bg-sky-100 px-4 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-200/80 dark:border-sky-400/30 dark:bg-sky-400/20 dark:text-sky-100"
+              className="rounded-full border border-sky-200 bg-sky-100 px-4 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-200/80"
             >
               Sınav Kartını Kaydet
             </button>
@@ -438,9 +444,11 @@ export default function ExamsCheatsheetSection({
 
       {/* Sınav Kartları Listesi */}
       {sortedExams.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-8 text-center dark:border-slate-800 dark:bg-slate-900/40">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Henüz sınav kartı bulunmuyor.
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-8 text-center">
+          <p className="text-sm text-slate-500">
+            {courses.length === 0
+              ? 'Sınav ve Cheatsheet kartı oluşturmak için önce derslerinizi ekleyin.'
+              : 'Henüz sınav kartı bulunmuyor. "Yeni Sınav Kartı Ekle" butonuyla sınavlarınızı ekleyebilirsiniz.'}
           </p>
         </div>
       ) : (
@@ -451,21 +459,20 @@ export default function ExamsCheatsheetSection({
               COURSE_COLOR_THEMES[course?.color] || COURSE_COLOR_THEMES.blue;
             const countdown = getCountdownInfo(exam.examDate, false);
             const mode = cheatsheetModeByExam[exam.id] || 'preview';
-
             const isHighlighted = highlightedExamId === exam.id;
 
             return (
               <div
                 key={exam.id}
                 id={`exam-card-${exam.id}`}
-                className={`overflow-hidden rounded-2xl border bg-white p-5 sm:p-6 shadow-sm transition dark:bg-slate-800/60 ${
+                className={`overflow-hidden rounded-2xl border bg-white p-5 sm:p-6 shadow-2xs transition ${
                   isHighlighted
-                    ? 'border-sky-400 ring-2 ring-sky-300/70 dark:border-sky-400 dark:ring-sky-400/40'
-                    : 'border-slate-200/80 dark:border-slate-700/70'
+                    ? 'border-sky-400 ring-2 ring-sky-300/70'
+                    : 'border-slate-200/80'
                 }`}
               >
                 {/* Üst Satır: Ders, Sınav Türü, Tarih/Yer ve Kalan Süre */}
-                <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 dark:border-slate-700/60 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
@@ -474,20 +481,20 @@ export default function ExamsCheatsheetSection({
                         <span className={`h-2 w-2 rounded-full ${theme.dot}`} />
                         {course?.code || 'DERS'}
                       </span>
-                      <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 sm:text-lg">
+                      <h3 className="text-base font-semibold text-slate-800 sm:text-lg">
                         {course?.name} — {exam.examType}
                       </h3>
                       {exam.weight && (
-                        <span className="rounded-full bg-rose-100/80 px-2.5 py-0.5 text-[11px] font-medium text-rose-800 dark:bg-rose-400/15 dark:text-rose-200">
+                        <span className="rounded-full bg-rose-100/80 px-2.5 py-0.5 text-[11px] font-medium text-rose-800">
                           Ağırlık: %{exam.weight}
                         </span>
                       )}
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
                       <span className="inline-flex items-center gap-1.5">
                         <Calendar className={`h-3.5 w-3.5 ${theme.text}`} />
-                        <strong className="font-medium text-slate-700 dark:text-slate-200">
+                        <strong className="font-medium text-slate-700">
                           {formatTurkishDateTime(exam.examDate)}
                         </strong>
                       </span>
@@ -510,7 +517,7 @@ export default function ExamsCheatsheetSection({
                       type="button"
                       onClick={() => onDeleteExam(exam.id)}
                       title="Sınav Kartını Sil"
-                      className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/15 dark:hover:text-rose-300"
+                      className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -522,14 +529,14 @@ export default function ExamsCheatsheetSection({
                   {/* Sol Sütun (5/12) */}
                   <div className="space-y-4 lg:col-span-5">
                     {/* Lila / Lavanta Cheatsheet & İzin Kuralları Kutusu */}
-                    <div className="rounded-2xl border border-violet-200/70 bg-violet-50/40 p-4 dark:border-violet-400/20 dark:bg-violet-950/15">
+                    <div className="rounded-2xl border border-violet-200/70 bg-violet-50/40 p-4">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-violet-900 dark:text-violet-200">
+                        <span className="text-xs font-semibold text-violet-900">
                           Cheatsheet & İzin Kuralları
                         </span>
 
                         {/* Evet / Hayır İnteraktif Hap Butonu */}
-                        <div className="inline-flex rounded-full border border-slate-200/80 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-900">
+                        <div className="inline-flex rounded-full border border-slate-200/80 bg-white p-0.5">
                           <button
                             type="button"
                             onClick={() =>
@@ -539,7 +546,7 @@ export default function ExamsCheatsheetSection({
                             }
                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
                               exam.cheatsheetAllowed
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-200'
+                                ? 'bg-emerald-100 text-emerald-800'
                                 : 'text-slate-400 hover:text-slate-600'
                             }`}
                           >
@@ -555,7 +562,7 @@ export default function ExamsCheatsheetSection({
                             }
                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
                               !exam.cheatsheetAllowed
-                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-400/20 dark:text-rose-200'
+                                ? 'bg-rose-100 text-rose-800'
                                 : 'text-slate-400 hover:text-slate-600'
                             }`}
                           >
@@ -567,8 +574,8 @@ export default function ExamsCheatsheetSection({
 
                       <div className="mt-3 space-y-2.5">
                         <div>
-                          <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                            <FileText className="h-3.5 w-3.5 text-violet-500 dark:text-violet-300" />
+                          <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                            <FileText className="h-3.5 w-3.5 text-violet-500" />
                             <span>Sayfa & Format İzni:</span>
                           </label>
                           <input
@@ -580,13 +587,13 @@ export default function ExamsCheatsheetSection({
                               })
                             }
                             placeholder="Örn: 1 Sayfa Tek Yüz A4 El Yazısı"
-                            className="mt-1 w-full rounded-xl border border-violet-200/70 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-violet-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"
+                            className="mt-1 w-full rounded-xl border border-violet-200/70 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-violet-300 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                            <Calculator className="h-3.5 w-3.5 text-sky-500 dark:text-sky-300" />
+                          <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                            <Calculator className="h-3.5 w-3.5 text-sky-500" />
                             <span>Hesap Makinesi İzni:</span>
                           </label>
                           <input
@@ -598,17 +605,17 @@ export default function ExamsCheatsheetSection({
                               })
                             }
                             placeholder="Örn: Hesap Makinesi: Serbest / Yasak"
-                            className="mt-1 w-full rounded-xl border border-violet-200/70 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-violet-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"
+                            className="mt-1 w-full rounded-xl border border-violet-200/70 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-violet-300 focus:outline-none"
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Sınav Kapsamı Listesi */}
-                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4 dark:border-slate-700/70 dark:bg-slate-900/40">
+                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4">
                       <div className="flex items-center gap-2">
-                        <ListChecks className="h-4 w-4 text-sky-600 dark:text-sky-300" />
-                        <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        <ListChecks className="h-4 w-4 text-sky-600" />
+                        <h4 className="text-xs font-semibold text-slate-700">
                           Sınav Kapsamı ({exam.scopeTopics?.length || 0} Başlık)
                         </h4>
                       </div>
@@ -617,10 +624,10 @@ export default function ExamsCheatsheetSection({
                         {(exam.scopeTopics || []).map((topicText, idx) => (
                           <li
                             key={idx}
-                            className="flex items-start justify-between gap-2 rounded-xl border border-slate-200/70 bg-white px-3 py-1.5 text-xs text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/70 dark:text-slate-200"
+                            className="flex items-start justify-between gap-2 rounded-xl border border-slate-200/70 bg-white px-3 py-1.5 text-xs text-slate-700"
                           >
                             <div className="flex items-start gap-2">
-                              <span className="mt-0.5 text-[11px] font-semibold text-sky-600 dark:text-sky-300">
+                              <span className="mt-0.5 text-[11px] font-semibold text-sky-600">
                                 {idx + 1}.
                               </span>
                               <span>{topicText}</span>
@@ -654,12 +661,12 @@ export default function ExamsCheatsheetSection({
                               handleAddScopeItem(exam);
                             }
                           }}
-                          className="flex-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                          className="flex-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-sky-300 focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={() => handleAddScopeItem(exam)}
-                          className="rounded-full bg-sky-100 px-3.5 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-200 dark:bg-sky-400/20 dark:text-sky-100"
+                          className="rounded-full bg-sky-100 px-3.5 py-1.5 text-xs font-medium text-sky-900 hover:bg-sky-200"
                         >
                           Ekle
                         </button>
@@ -668,18 +675,18 @@ export default function ExamsCheatsheetSection({
                   </div>
 
                   {/* Sağ Sütun (7/12): Mini Dijital Cheatsheet Alanı */}
-                  <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-700/70 dark:bg-slate-900/50 lg:col-span-7">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-3 dark:border-slate-700/60">
+                  <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 lg:col-span-7">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                          <span className="text-xs font-semibold text-slate-800">
                             Mini Dijital Cheatsheet
                           </span>
                           <span
                             className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${
                               exam.cheatsheetAllowed
-                                ? 'border-emerald-200 bg-emerald-100/80 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-200'
-                                : 'border-rose-200 bg-rose-100/80 text-rose-800 dark:border-rose-400/30 dark:bg-rose-400/15 dark:text-rose-200'
+                                ? 'border-emerald-200 bg-emerald-100/80 text-emerald-800'
+                                : 'border-rose-200 bg-rose-100/80 text-rose-800'
                             }`}
                           >
                             {exam.cheatsheetAllowed
@@ -690,7 +697,7 @@ export default function ExamsCheatsheetSection({
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <div className="inline-flex rounded-full border border-slate-200/90 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-800">
+                        <div className="inline-flex rounded-full border border-slate-200/90 bg-white p-0.5">
                           <button
                             type="button"
                             onClick={() =>
@@ -701,8 +708,8 @@ export default function ExamsCheatsheetSection({
                             }
                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition ${
                               mode === 'preview'
-                                ? 'bg-sky-100 text-sky-900 dark:bg-sky-400/20 dark:text-sky-100'
-                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                                ? 'bg-sky-100 text-sky-900'
+                                : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
                             <Eye className="h-3 w-3" />
@@ -718,8 +725,8 @@ export default function ExamsCheatsheetSection({
                             }
                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition ${
                               mode === 'edit'
-                                ? 'bg-sky-100 text-sky-900 dark:bg-sky-400/20 dark:text-sky-100'
-                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                                ? 'bg-sky-100 text-sky-900'
+                                : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
                             <Edit3 className="h-3 w-3" />
@@ -730,12 +737,12 @@ export default function ExamsCheatsheetSection({
                         <button
                           type="button"
                           onClick={() => handleCopyCheatsheet(exam)}
-                          className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:border-sky-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:border-sky-300"
                         >
                           {copiedExamId === exam.id ? (
                             <>
-                              <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-300" />
-                              <span className="text-emerald-700 dark:text-emerald-200">
+                              <Check className="h-3 w-3 text-emerald-600" />
+                              <span className="text-emerald-700">
                                 Kopyalandı
                               </span>
                             </>
@@ -761,7 +768,7 @@ export default function ExamsCheatsheetSection({
                               })
                             }
                             placeholder="Sınav kağıdına yazacağınız formülleri ve kısa notları buraya yazın..."
-                            className="w-full rounded-xl border border-sky-200 bg-white p-3.5 font-mono text-xs leading-relaxed text-slate-800 focus:border-sky-300 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                            className="w-full rounded-xl border border-sky-200 bg-white p-3.5 font-mono text-xs leading-relaxed text-slate-800 focus:border-sky-300 focus:outline-none"
                           />
                           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
                             <span>Sembol ekle:</span>
@@ -789,7 +796,7 @@ export default function ExamsCheatsheetSection({
                                         (exam.cheatsheetContent || '') + sym,
                                     })
                                   }
-                                  className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 font-mono text-xs text-slate-700 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                  className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 font-mono text-xs text-slate-700 hover:bg-sky-50"
                                 >
                                   {sym}
                                 </button>
@@ -806,7 +813,7 @@ export default function ExamsCheatsheetSection({
                             })
                           }
                           title="Düzenlemek için tıklayın"
-                          className="min-h-[220px] cursor-pointer rounded-xl border border-slate-200/70 bg-white p-4 transition hover:border-sky-200 dark:border-slate-700/60 dark:bg-slate-900/80"
+                          className="min-h-[210px] cursor-text rounded-xl border border-slate-200/70 bg-white p-4 transition hover:border-violet-200"
                         >
                           {renderCheatsheetPreview(exam.cheatsheetContent)}
                         </div>
