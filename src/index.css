@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background-color: #f8fafc;
+    color: #334155;
+    color-scheme: light;
+  }
+
+  html.dark {
+    background-color: #0f172a;
+    color: #e2e8f0;
+    color-scheme: dark;
+  }
+
+  body {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: inherit;
+    color: inherit;
+  }
+}
+
+/* Zarif ve yumuşak kaydırma çubukları */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(125, 211, 252, 0.8);
+}
