@@ -1,10 +1,9 @@
-// Aydınlık Pastel renk paletiyle uyumlu kalan süre hesaplama, canlı geri sayım ve akıllı çalışma öneri motoru
+// Aydınlık Pastel renk paletiyle uyumlu kalan süre hesaplama ve tarih biçimlendirme yardımcıları
 
 export function getCountdownInfo(targetDateStr, isCompleted = false) {
-  // Mine Yeşili (Mint): Tamamlananlar için
   if (isCompleted) {
     return {
-      label: 'Teslim Edildi ✓',
+      label: 'Tamamlandı ✓',
       shortLabel: 'Tamamlandı',
       badgeClass: 'bg-emerald-100/85 text-emerald-800 border-emerald-200',
       dotClass: 'bg-emerald-500',
@@ -35,7 +34,6 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
   const hours = Math.floor(absHours % 24);
   const minutes = Math.floor((absHours * 60) % 60);
 
-  // Süresi geçenler: Açık Pembe (Soft Blush Pink)
   if (diffMs < 0) {
     const overdueText =
       days > 0
@@ -52,7 +50,6 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     };
   }
 
-  // Son 24 saat: Açık Pembe + Yanıp Sönen (Pulse) Acil Durum
   if (diffHours <= 24) {
     const labelText =
       hours > 0
@@ -69,7 +66,6 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     };
   }
 
-  // 24 - 48 saat arası: Açık Pembe (Soft Blush Pink)
   if (diffHours <= 48) {
     return {
       label: `Son ${days} gün ${hours} saat • Acil`,
@@ -82,7 +78,6 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     };
   }
 
-  // 2 - 4 gün arası: Pastel Lavanta / Lila
   if (diffHours <= 96) {
     return {
       label: `Son ${days} gün ${hours} saat`,
@@ -95,7 +90,6 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
     };
   }
 
-  // Bu hafta: Bebek Mavisi (Baby Blue)
   if (diffHours <= 168) {
     return {
       label: `${days} gün ${hours} saat kaldı`,
@@ -119,9 +113,6 @@ export function getCountdownInfo(targetDateStr, isCompleted = false) {
   };
 }
 
-/**
- * Merkezi Sınav Takvimi için Gün / Saat / Dakika / Saniye canlı kırılımı döndürür
- */
 export function getLiveCountdownParts(targetDateStr) {
   if (!targetDateStr) {
     return {
@@ -175,67 +166,6 @@ export function getLiveCountdownParts(targetDateStr) {
   };
 }
 
-/**
- * 24 saatten az kalan (veya yeni gecikmiş) tüm sınav ve ödevleri tespit eder
- */
-export function getUrgent24hAlerts(assignments = [], exams = [], courses = []) {
-  const courseMap = new Map(courses.map((c) => [c.id, c]));
-  const now = new Date();
-  const alerts = [];
-
-  assignments.forEach((asg) => {
-    if (asg.status === 'done' || !asg.dueDate) return;
-    const diffHours = (new Date(asg.dueDate) - now) / (1000 * 3600);
-    if (diffHours <= 24 && diffHours >= -24) {
-      const course = courseMap.get(asg.courseId);
-      const parts = getLiveCountdownParts(asg.dueDate);
-      alerts.push({
-        id: `alert-asg-${asg.id}`,
-        itemId: asg.id,
-        type: 'assignment',
-        typeLabel: 'Ödev Teslimi',
-        courseId: asg.courseId,
-        courseCode: course?.code || 'DERS',
-        courseName: course?.name || 'Ders',
-        courseColor: course?.color || 'rose',
-        title: asg.title,
-        targetDate: asg.dueDate,
-        diffHours,
-        parts,
-        isOverdue: diffHours < 0,
-      });
-    }
-  });
-
-  exams.forEach((exm) => {
-    if (!exm.examDate) return;
-    const diffHours = (new Date(exm.examDate) - now) / (1000 * 3600);
-    if (diffHours <= 24 && diffHours >= -6) {
-      const course = courseMap.get(exm.courseId);
-      const parts = getLiveCountdownParts(exm.examDate);
-      alerts.push({
-        id: `alert-exm-${exm.id}`,
-        itemId: exm.id,
-        type: 'exam',
-        typeLabel: 'Sınav Uyarısı',
-        courseId: exm.courseId,
-        courseCode: course?.code || 'DERS',
-        courseName: course?.name || 'Ders',
-        courseColor: course?.color || 'violet',
-        title: `${course?.code || ''} ${exm.examType}`,
-        location: exm.location,
-        targetDate: exm.examDate,
-        diffHours,
-        parts,
-        isOverdue: diffHours < 0,
-      });
-    }
-  });
-
-  alerts.sort((a, b) => a.diffHours - b.diffHours);
-  return alerts;
-}
-
 export function formatTurkishDateTime(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
@@ -247,92 +177,4 @@ export function formatTurkishDateTime(dateStr) {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-/**
- * "Bugün Neye Odaklanmalıyım?" Akıllı Öneri Algoritması:
- * Yaklaşan sınavlara, teslimi yakın ödevlere, dersin kredi ağırlığına ve
- * konunun durumuna ("missing" > "review") göre tüm konuları puanlar ve ilk 3 konuyu döndürür.
- */
-export function getSmartStudyRecommendations(topics, courses, exams, assignments) {
-  const courseMap = new Map(courses.map((c) => [c.id, c]));
-  const now = new Date();
-
-  const candidateTopics = topics.filter((t) => t.status !== 'studied');
-
-  const scored = candidateTopics.map((topic) => {
-    const course = courseMap.get(topic.courseId);
-    let score = 0;
-    const reasons = [];
-
-    if (topic.status === 'missing') {
-      score += 55;
-      reasons.push('Eksik konu');
-    } else if (topic.status === 'review') {
-      score += 30;
-      reasons.push('Tekrar gerekli');
-    }
-
-    if (topic.inExamScope) {
-      score += 18;
-    }
-
-    const courseExams = exams
-      .filter((e) => e.courseId === topic.courseId && new Date(e.examDate) > now)
-      .sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
-
-    let nearestExamHours = Infinity;
-    if (courseExams.length > 0) {
-      const nextExam = courseExams[0];
-      nearestExamHours = (new Date(nextExam.examDate) - now) / (1000 * 3600);
-      const examDays = Math.max(1, Math.ceil(nearestExamHours / 24));
-      if (nearestExamHours <= 24) {
-        score += 75;
-        reasons.push('Sınav <24 saat!');
-      } else if (nearestExamHours <= 72) {
-        score += 50;
-        reasons.push(`Sınava ${examDays} gün`);
-      } else if (nearestExamHours <= 168) {
-        score += 35;
-        reasons.push(`Sınava ${examDays} gün`);
-      } else if (nearestExamHours <= 336) {
-        score += 20;
-        reasons.push(`Sınav ${examDays} gün sonra`);
-      }
-    }
-
-    const activeAssignments = assignments
-      .filter((a) => a.courseId === topic.courseId && a.status !== 'done')
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-
-    if (activeAssignments.length > 0) {
-      const nextAsg = activeAssignments[0];
-      const asgHours = (new Date(nextAsg.dueDate) - now) / (1000 * 3600);
-      if (asgHours <= 24) {
-        score += 40;
-        reasons.push('Ödev <24 saat!');
-      } else if (asgHours <= 72) {
-        score += 28;
-        reasons.push('Yakın ödev teslimi');
-      } else if (asgHours <= 168) {
-        score += 14;
-        reasons.push('Bu hafta ödev var');
-      }
-    }
-
-    if (course?.credits) {
-      score += Number(course.credits) * 2;
-    }
-
-    return {
-      topic,
-      course,
-      score,
-      reasons,
-      nearestExamHours,
-    };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, 3);
 }

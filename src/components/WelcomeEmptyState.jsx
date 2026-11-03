@@ -2,60 +2,81 @@ import React from 'react';
 import {
   Sparkles,
   Plus,
-  BookOpen,
-  CalendarClock,
-  Award,
+  CalendarDays,
 } from 'lucide-react';
+import {
+  WinkingCloudMascot,
+  CloudMascot,
+  FlameMascot,
+  DropMascot,
+} from './MascotIcons';
 
 export default function WelcomeEmptyState({
   userName,
   userEmail,
+  courseCount = 0,
+  examCount = 0,
   onStartAddCourse,
   onNavigateTab,
 }) {
+  const hasCourses = courseCount > 0;
+
   return (
-    <section className="overflow-hidden rounded-3xl border border-sky-200/85 bg-gradient-to-br from-sky-50/80 via-white to-violet-50/70 p-6 sm:p-8 shadow-xs">
+    <section className="overflow-hidden rounded-3xl border border-white/95 bg-white p-6 sm:p-8 shadow-habitz">
       <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-        <div className="max-w-2xl space-y-2.5">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-100/80 px-3 py-1 text-xs font-semibold text-emerald-900">
-            <Sparkles className="h-3.5 w-3.5 text-emerald-700" />
-            <span>
-              Merhaba {userName || userEmail} • Kişisel Çalışma Alanınız Hazır
-            </span>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center max-w-2xl">
+          {/* Sol tarafta göz kırpan sevimli bulut maskot */}
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#F5F3FF] to-[#EDE9FE] border border-[#C4B5FD]/60 shadow-2xs">
+            <WinkingCloudMascot className="h-13 w-13" />
           </div>
 
-          <h2 className="text-lg font-bold tracking-tight text-slate-800 sm:text-xl">
-            Hoş Geldiniz! Henüz bir ders eklemediniz. İlk dersinizi ekleyerek başlayın.
-          </h2>
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#6EE7B7] bg-[#ECFDF5] px-3 py-1 text-xs font-bold text-emerald-900">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+              <span>
+                Merhaba {userName || userEmail} • Kişisel Çalışma Alanınız Hazır
+              </span>
+            </div>
 
-          <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
-            Hesabınız sıfırdan tamamen temiz oluşturuldu. Aldığınız dersleri ekledikten sonra o derse ait ödev teslimlerini, sınav geri sayımlarını, dijital formül kağıtlarını (Cheatsheet) ve GANO senaryolarınızı tek ekrandan takip edebilirsiniz.
-          </p>
+            <h2 className="text-lg font-extrabold tracking-tight text-slate-800 sm:text-xl">
+              {hasCourses
+                ? `Hoş Geldiniz! Şu an ${courseCount} dersiniz ve ${examCount} sınav kaydınız aktif.`
+                : 'Hoş Geldiniz! Henüz bir ders eklemediniz. İlk dersinizi ekleyerek başlayın.'}
+            </h2>
+
+            <p className="text-xs leading-relaxed text-slate-500 sm:text-sm">
+              Zorunlu veya Seçmeli derslerinizi (0 Kredi ve 0 AKTS OC dersler dahil) ekledikten sonra haftalık ders programınızı, sınav takviminizi, 0–100 sınav sonuçlarınızı ve çıkmış soru PDF & çalışma notu arşivinizi tek ekrandan yönetebilirsiniz.
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* "+ İlk Dersinizi Ekleyin" yumuşak lila/mor tonda, rounded-2xl ve hover:scale-105 */}
           <button
             type="button"
             onClick={onStartAddCourse}
-            className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-100 px-5 py-2.5 text-xs font-semibold text-sky-900 shadow-xs transition hover:bg-sky-200/80"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#C4B5FD]/85 border border-[#8B5CF6]/30 px-5 py-3 text-xs font-extrabold text-purple-950 shadow-xs transition-all duration-200 hover:scale-105 hover:bg-[#C4B5FD]"
           >
-            <Plus className="h-4 w-4" />
-            <span>İlk Dersinizi Ekleyin</span>
+            <Plus className="h-4 w-4 text-purple-800" />
+            <span>
+              {hasCourses ? 'Yeni Ders Ekleyin' : 'İlk Dersinizi Ekleyin'}
+            </span>
           </button>
 
+          {/* "Haftalık Programı Gör" açık pastel çerçeveli zarif ikincil buton */}
           <button
             type="button"
-            onClick={() => onNavigateTab('graduation')}
-            className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-100/80 px-4 py-2.5 text-xs font-medium text-violet-900 transition hover:bg-violet-200/70"
+            onClick={() => onNavigateTab('schedule')}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-purple-200 bg-purple-50/70 px-4 py-3 text-xs font-bold text-purple-700 transition hover:bg-purple-100/75"
           >
-            <Award className="h-4 w-4" />
-            <span>Transkript & Mezuniyet Hedefi</span>
+            <CalendarDays className="h-4 w-4 text-purple-600" />
+            <span>Haftalık Programı Gör</span>
           </button>
         </div>
       </div>
 
-      {/* 3 Adımlı Pastel Başlangıç Rehberi */}
-      <div className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+      {/* Alttaki 3 Rehber Kutusu: Pastel çerçeveli, bol iç boşluklu ve sevimli minik ikonlarla */}
+      <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div
           onClick={onStartAddCourse}
           role="button"
@@ -66,17 +87,14 @@ export default function WelcomeEmptyState({
               onStartAddCourse();
             }
           }}
-          className="cursor-pointer rounded-2xl border border-sky-200/70 bg-white/90 p-4 transition hover:border-sky-300 hover:shadow-xs"
+          className="cursor-pointer rounded-3xl border border-sky-200/80 bg-gradient-to-br from-[#EFF6FF]/90 via-white to-[#DBEAFE]/50 p-5 shadow-2xs transition hover:-translate-y-0.5 hover:border-[#93C5FD]"
         >
-          <div className="flex items-center gap-2 text-xs font-semibold text-sky-900">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-sky-800">
-              1
-            </span>
-            <BookOpen className="h-3.5 w-3.5 text-sky-600" />
-            <span>1. Adım: Derslerinizi Oluşturun</span>
+          <div className="flex items-center gap-2.5 text-xs font-extrabold text-sky-950">
+            <CloudMascot className="h-8 w-8 shrink-0" />
+            <span>1. Ders ve Saat Ekleyin</span>
           </div>
-          <p className="mt-1.5 text-xs text-slate-500">
-            Ders kodu, kredi (AKTS), öğretim görevlisi ve pastel renk etiketini belirleyin.
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            Zorunlu veya Seçmeli dersinizi, bağımsız Kredi/AKTS değerlerini (0 dahil) ve ders saatini belirleyin.
           </p>
         </div>
 
@@ -90,41 +108,35 @@ export default function WelcomeEmptyState({
               onNavigateTab('exams');
             }
           }}
-          className="cursor-pointer rounded-2xl border border-rose-200/70 bg-white/90 p-4 transition hover:border-rose-300 hover:shadow-xs"
+          className="cursor-pointer rounded-3xl border border-rose-200/80 bg-gradient-to-br from-[#FFF1F2]/90 via-white to-[#FFE4E6]/50 p-5 shadow-2xs transition hover:-translate-y-0.5 hover:border-[#FDA4AF]"
         >
-          <div className="flex items-center gap-2 text-xs font-semibold text-rose-900">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-800">
-              2
-            </span>
-            <CalendarClock className="h-3.5 w-3.5 text-rose-600" />
-            <span>2. Adım: Ödev & Sınavları Girin</span>
+          <div className="flex items-center gap-2.5 text-xs font-extrabold text-rose-950">
+            <FlameMascot className="h-8 w-8 shrink-0" />
+            <span>2. Sınav Takvimi & Sonuçlar</span>
           </div>
-          <p className="mt-1.5 text-xs text-slate-500">
-            Canlı geri sayım sayaçlarını başlatın ve 24 saat kala e-posta bildirimlerini alın.
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            Vize, Final, Büt ve Quiz tarihlerini ekleyin; sonuçlar açıklandığında 0–100 notunuzu kaydedin.
           </p>
         </div>
 
         <div
-          onClick={() => onNavigateTab('graduation')}
+          onClick={() => onNavigateTab('courses')}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              onNavigateTab('graduation');
+              onNavigateTab('courses');
             }
           }}
-          className="cursor-pointer rounded-2xl border border-emerald-200/70 bg-white/90 p-4 transition hover:border-emerald-300 hover:shadow-xs"
+          className="cursor-pointer rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-[#ECFDF5]/90 via-white to-[#D1FAE5]/50 p-5 shadow-2xs transition hover:-translate-y-0.5 hover:border-[#6EE7B7]"
         >
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-900">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-              3
-            </span>
-            <Award className="h-3.5 w-3.5 text-emerald-600" />
-            <span>3. Adım: GANO & Mezuniyet Takibi</span>
+          <div className="flex items-center gap-2.5 text-xs font-extrabold text-emerald-950">
+            <DropMascot className="h-8 w-8 shrink-0" />
+            <span>3. Çıkmış Soru PDF & Not Arşivi</span>
           </div>
-          <p className="mt-1.5 text-xs text-slate-500">
-            Vize/Final ağırlıklarınızı girerek olası dönem ve genel ortalamanızı simüle edin.
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            Her dersin kendi kartı içinde Sınav PDF/Çıkmış Sorular ve Ders Çalışma Notları arşivini yönetin.
           </p>
         </div>
       </div>

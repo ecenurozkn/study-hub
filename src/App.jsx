@@ -2,21 +2,21 @@ import React, { useState, useEffect, useMemo } from 'react';
 import AuthScreen from './components/AuthScreen';
 import WelcomeEmptyState from './components/WelcomeEmptyState';
 import Header from './components/Header';
-import DashboardStats from './components/DashboardStats';
-import KnowledgeWidgets from './components/KnowledgeWidgets';
-import ExamCountdownHub from './components/ExamCountdownHub';
+import WeeklyScheduleSection from './components/WeeklyScheduleSection';
 import CoursesSection from './components/CoursesSection';
-import AssignmentsSection from './components/AssignmentsSection';
-import StudyTrackerSection from './components/StudyTrackerSection';
 import ExamsCheatsheetSection from './components/ExamsCheatsheetSection';
-import GraduationTranscriptSection from './components/GraduationTranscriptSection';
-import NotificationCenterDrawer from './components/NotificationCenterDrawer';
+import { FlameMascot } from './components/MascotIcons';
 import { createEmptyUserData } from './data/initialData';
 import {
-  getUrgent24hAlerts,
-  getSmartStudyRecommendations,
-} from './utils/dateUtils';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+  CheckCircle2,
+  AlertCircle,
+  LogOut,
+  RotateCcw,
+  Mail,
+  BookOpen,
+  CalendarDays,
+  FileSpreadsheet,
+} from 'lucide-react';
 
 const USERS_REGISTRY_KEY = 'studyhub_registered_users_v1';
 const ACTIVE_SESSION_KEY = 'studyhub_active_session_v1';
@@ -66,27 +66,7 @@ function loadUserData(email) {
         return {
           ...emptyDefaults,
           courses: Array.isArray(parsed.courses) ? parsed.courses : [],
-          assignments: Array.isArray(parsed.assignments)
-            ? parsed.assignments
-            : [],
-          topics: Array.isArray(parsed.topics) ? parsed.topics : [],
           exams: Array.isArray(parsed.exams) ? parsed.exams : [],
-          knowledgeCards: Array.isArray(parsed.knowledgeCards)
-            ? parsed.knowledgeCards
-            : [],
-          graduation:
-            parsed.graduation &&
-            Array.isArray(parsed.graduation.transcriptCourses)
-              ? parsed.graduation
-              : emptyDefaults.graduation,
-          notificationSettings: {
-            ...emptyDefaults.notificationSettings,
-            ...(parsed.notificationSettings || {}),
-            emailAddress: email,
-          },
-          notificationHistory: Array.isArray(parsed.notificationHistory)
-            ? parsed.notificationHistory
-            : [],
         };
       }
     }
@@ -106,19 +86,13 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('all');
   const [selectedCourseId, setSelectedCourseId] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState(null);
-  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
   const [highlightedExamId, setHighlightedExamId] = useState(null);
   const [forceOpenCourseFormCounter, setForceOpenCourseFormCounter] = useState(0);
-  const [notificationPermission, setNotificationPermission] = useState(() =>
-    typeof window !== 'undefined' && 'Notification' in window
-      ? Notification.permission
-      : 'default'
-  );
+  const [confirmReset, setConfirmReset] = useState(false);
   const [, setTick] = useState(0);
 
-  // Aydınlık mod garantisi (Tarayıcıda önceden kalmış .dark sınıfı varsa temizle)
+  // Aydınlık pastel mod garantisi
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     document.documentElement.style.colorScheme = 'light';
@@ -138,23 +112,7 @@ export default function App() {
     }
   }, [data, currentUser]);
 
-  // Sayfa açıldığında Web Notifications API izni iste
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotificationPermission(Notification.permission);
-      if (Notification.permission === 'default') {
-        Notification.requestPermission()
-          .then((perm) => {
-            setNotificationPermission(perm);
-          })
-          .catch(() => {
-            // ignore
-          });
-      }
-    }
-  }, []);
-
-  // Periyodik sayaç yenileme
+  // Periyodik geri sayım yenileme
   useEffect(() => {
     const timer = setInterval(() => {
       setTick((t) => t + 1);
@@ -166,7 +124,7 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 3800);
+    }, 3400);
   };
 
   // --- KULLANICI GİRİŞİ (SIGN IN) & KAYIT OL (SIGN UP) & ÇIKIŞ (SIGN OUT) ---
@@ -266,144 +224,28 @@ export default function App() {
       // ignore
     }
     setCurrentUser(null);
-    setIsNotificationDrawerOpen(false);
     setSelectedCourseId('all');
-    setSearchQuery('');
+    setConfirmReset(false);
   };
 
-  // --- ACİL 24 SAAT UYARILARI & AKILLI ÖNERİLER ---
-  const urgentAlerts = useMemo(
-    () => getUrgent24hAlerts(data.assignments, data.exams, data.courses),
-    [data.assignments, data.exams, data.courses]
-  );
-
-  const smartRecommendations = useMemo(
-    () =>
-      getSmartStudyRecommendations(
-        data.topics,
-        data.courses,
-        data.exams,
-        data.assignments
-      ),
-    [data.topics, data.courses, data.exams, data.assignments]
-  );
-
-  // --- WEB NOTIFICATIONS API & GİRİŞ YAPILAN E-POSTAYA ÖZEL HATIRLATMA SİSTEMİ ---
-  const handleRequestNotificationPermission = async () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      showNotification(
-        'Tarayıcınız masaüstü bildirimlerini desteklemiyor, uygulama içi bildirim aktif.',
-        'error'
-      );
-      return;
-    }
+  const handleResetAllData = () => {
+    if (!currentUser?.email) return;
+    const freshData = createEmptyUserData(currentUser.email);
+    setData(freshData);
+    setSelectedCourseId('all');
+    setConfirmReset(false);
     try {
-      const perm = await Notification.requestPermission();
-      setNotificationPermission(perm);
-      if (perm === 'granted') {
-        showNotification('Masaüstü bildirim izni verildi!');
-      } else {
-        showNotification(
-          'Tarayıcı bildirimi engellendi; bildirimler uygulama içi merkezde gösterilecek.'
-        );
-      }
+      localStorage.setItem(
+        getUserStorageKey(currentUser.email),
+        JSON.stringify(freshData)
+      );
     } catch {
       // ignore
     }
+    showNotification('Tüm ders, sınav ve arşiv verileriniz sıfırlandı.');
   };
 
-  const handleTriggerDailyStudyNotification = () => {
-    const topTitles =
-      smartRecommendations.length > 0
-        ? smartRecommendations
-            .map(
-              (r, i) => `${i + 1}) [${r.course?.code || 'Ders'}] ${r.topic.title}`
-            )
-            .join(' • ')
-        : 'Henüz bekleyen çalışma konusu yok.';
-
-    if (
-      typeof window !== 'undefined' &&
-      'Notification' in window &&
-      Notification.permission === 'granted'
-    ) {
-      try {
-        new Notification('Günlük Ders Tekrarı Önerileri 📚', {
-          body: topTitles,
-        });
-      } catch {
-        // Fallback to in-app notification
-      }
-    }
-
-    const newLog = {
-      id: `notif-${Date.now()}`,
-      type: 'desktop_daily',
-      title: 'Günlük Ders Tekrarı Masaüstü Bildirimi Tetiklendi',
-      recipient: currentUser?.email || '',
-      summary: topTitles,
-      createdAt: new Date().toISOString(),
-    };
-
-    setData((prev) => ({
-      ...prev,
-      notificationHistory: [newLog, ...(prev.notificationHistory || [])],
-    }));
-
-    showNotification(`Günlük Ders Tekrarı: ${topTitles}`);
-  };
-
-  const handleUpdateNotificationSettings = (updates) => {
-    setData((prev) => ({
-      ...prev,
-      notificationSettings: {
-        ...(prev.notificationSettings || {}),
-        ...updates,
-      },
-    }));
-  };
-
-  const handleSendUrgentEmail = ({ recipient, subject, alertCount }) => {
-    const targetEmail = recipient || currentUser?.email || '';
-    const newLog = {
-      id: `email-${Date.now()}`,
-      type: 'email_manual',
-      title: subject,
-      recipient: targetEmail,
-      summary: `${alertCount} adet 24 saat altı acil sınav/ödev hatırlatması ${targetEmail} adresine mailto: ile hazırlandı.`,
-      createdAt: new Date().toISOString(),
-    };
-    setData((prev) => ({
-      ...prev,
-      notificationHistory: [newLog, ...(prev.notificationHistory || [])],
-    }));
-    showNotification(
-      `24 saat hatırlatması (${targetEmail}) e-posta istemcinize aktarıldı ve geçmişe kaydedildi!`
-    );
-  };
-
-  const handleClearNotificationHistory = () => {
-    setData((prev) => ({
-      ...prev,
-      notificationHistory: [],
-    }));
-    showNotification('Bildirim geçmişi temizlendi.');
-  };
-
-  const handleNavigateToAlert = (alert) => {
-    if (alert.type === 'exam') {
-      setActiveTab('exams');
-      setHighlightedExamId(alert.itemId);
-      setTimeout(() => {
-        const el = document.getElementById(`exam-card-${alert.itemId}`);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-    } else {
-      setActiveTab('assignments');
-    }
-  };
-
-  // --- 1. DERS YÖNETİMİ İŞLEMLERİ ---
+  // --- 1. DERS YÖNETİMİ VE MATERYAL ARŞİVİ İŞLEMLERİ ---
   const handleStartFirstCourse = () => {
     setActiveTab('courses');
     setForceOpenCourseFormCounter((c) => c + 1);
@@ -417,18 +259,16 @@ export default function App() {
     const newCourse = {
       id: `course-${Date.now()}`,
       ...coursePayload,
-      targetGradeOverride: '',
-      assessments: [
-        { id: `asm-${Date.now()}-1`, name: 'Ara Sınav (Vize)', weight: 40, score: '' },
-        { id: `asm-${Date.now()}-2`, name: 'Final Sınavı', weight: 60, score: '' },
-      ],
+      examPdfs: [],
+      studyNotesText: '',
+      studyNoteItems: [],
       links: [],
     };
     setData((prev) => ({
       ...prev,
       courses: [...prev.courses, newCourse],
     }));
-    showNotification(`${newCourse.code} dersi eklendi.`);
+    showNotification(`${newCourse.code} dersi ve arşivi oluşturuldu.`);
   };
 
   const handleUpdateCourse = (courseId, updates) => {
@@ -445,12 +285,7 @@ export default function App() {
     setData((prev) => ({
       ...prev,
       courses: prev.courses.filter((c) => c.id !== courseId),
-      assignments: prev.assignments.filter((a) => a.courseId !== courseId),
-      topics: prev.topics.filter((t) => t.courseId !== courseId),
       exams: prev.exams.filter((e) => e.courseId !== courseId),
-      knowledgeCards: (prev.knowledgeCards || []).filter(
-        (k) => k.courseId !== courseId
-      ),
     }));
     if (selectedCourseId === courseId) {
       setSelectedCourseId('all');
@@ -458,94 +293,7 @@ export default function App() {
     showNotification(`${target?.code || 'Ders'} silindi.`);
   };
 
-  const handleAddCourseLink = (courseId, linkPayload) => {
-    const newLink = {
-      id: `lnk-${Date.now()}`,
-      ...linkPayload,
-    };
-    setData((prev) => ({
-      ...prev,
-      courses: prev.courses.map((c) =>
-        c.id === courseId
-          ? { ...c, links: [...(c.links || []), newLink] }
-          : c
-      ),
-    }));
-    showNotification('Ders bağlantısı eklendi.');
-  };
-
-  const handleDeleteCourseLink = (courseId, linkId) => {
-    setData((prev) => ({
-      ...prev,
-      courses: prev.courses.map((c) =>
-        c.id === courseId
-          ? { ...c, links: (c.links || []).filter((l) => l.id !== linkId) }
-          : c
-      ),
-    }));
-  };
-
-  // --- 2. ÖDEV & PROJE İŞLEMLERİ ---
-  const handleAddAssignment = (payload) => {
-    const newAsg = {
-      id: `asg-${Date.now()}`,
-      ...payload,
-    };
-    setData((prev) => ({
-      ...prev,
-      assignments: [...prev.assignments, newAsg],
-    }));
-    showNotification('Yeni ödev eklendi.');
-  };
-
-  const handleUpdateAssignment = (assignmentId, updates) => {
-    setData((prev) => ({
-      ...prev,
-      assignments: prev.assignments.map((a) =>
-        a.id === assignmentId ? { ...a, ...updates } : a
-      ),
-    }));
-  };
-
-  const handleDeleteAssignment = (assignmentId) => {
-    setData((prev) => ({
-      ...prev,
-      assignments: prev.assignments.filter((a) => a.id !== assignmentId),
-    }));
-    showNotification('Ödev silindi.');
-  };
-
-  // --- 3. ÇALIŞMA PLANI (SYLLABUS) İŞLEMLERİ ---
-  const handleAddTopic = (payload) => {
-    const newTopic = {
-      id: `top-${Date.now()}`,
-      ...payload,
-    };
-    setData((prev) => ({
-      ...prev,
-      topics: [...prev.topics, newTopic],
-    }));
-    showNotification('Konu çalışma planına eklendi.');
-  };
-
-  const handleUpdateTopic = (topicId, updates) => {
-    setData((prev) => ({
-      ...prev,
-      topics: prev.topics.map((t) =>
-        t.id === topicId ? { ...t, ...updates } : t
-      ),
-    }));
-  };
-
-  const handleDeleteTopic = (topicId) => {
-    setData((prev) => ({
-      ...prev,
-      topics: prev.topics.filter((t) => t.id !== topicId),
-    }));
-    showNotification('Konu silindi.');
-  };
-
-  // --- 4. SINAV & CHEATSHEET İŞLEMLERİ ---
+  // --- 2. SINAV TAKVİMİ & 0-100 SONUÇ İŞLEMLERİ ---
   const handleAddExam = (payload) => {
     const newExam = {
       id: `exm-${Date.now()}`,
@@ -555,7 +303,7 @@ export default function App() {
       ...prev,
       exams: [...prev.exams, newExam],
     }));
-    showNotification('Yeni sınav kartı oluşturuldu.');
+    showNotification('Yeni sınav takvime eklendi.');
   };
 
   const handleUpdateExam = (examId, updates) => {
@@ -572,240 +320,21 @@ export default function App() {
       ...prev,
       exams: prev.exams.filter((ex) => ex.id !== examId),
     }));
-    showNotification('Sınav kartı silindi.');
+    showNotification('Sınav silindi.');
   };
 
-  // --- 5. BİLGİ & FORMÜL KARTLARI (KNOWLEDGE WIDGETS) İŞLEMLERİ ---
-  const handleAddKnowledgeCard = (payload) => {
-    const newCard = {
-      id: `kw-${Date.now()}`,
-      ...payload,
-    };
-    setData((prev) => ({
-      ...prev,
-      knowledgeCards: [newCard, ...(prev.knowledgeCards || [])],
-    }));
-    showNotification('Yeni formül bilgi kartı eklendi.');
-  };
-
-  const handleDeleteKnowledgeCard = (cardId) => {
-    setData((prev) => ({
-      ...prev,
-      knowledgeCards: (prev.knowledgeCards || []).filter((k) => k.id !== cardId),
-    }));
-    showNotification('Formül kartı silindi.');
-  };
-
-  const handleSelectKnowledgeCard = (card) => {
-    const targetExam =
-      data.exams.find((e) => e.id === card.examId) ||
-      data.exams.find((e) => e.courseId === card.courseId);
-
-    if (targetExam) {
-      setSelectedCourseId('all');
-      if (activeTab !== 'all' && activeTab !== 'exams') {
-        setActiveTab('exams');
-      }
-      setHighlightedExamId(targetExam.id);
-      setTimeout(() => {
-        const el = document.getElementById(`exam-card-${targetExam.id}`);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 120);
-      showNotification(
-        `${card.title} için ilgili dersin Cheatsheet alanına gidildi.`
-      );
-    } else {
-      setSelectedCourseId(card.courseId || 'all');
-      setActiveTab('study');
-    }
-  };
-
-  const handleSelectExamFromCountdown = (exam) => {
-    setHighlightedExamId(exam.id);
-    if (activeTab !== 'all' && activeTab !== 'exams') {
-      setActiveTab('exams');
-    }
-    setTimeout(() => {
-      const el = document.getElementById(`exam-card-${exam.id}`);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-  };
-
-  // --- 6. MEZUNİYET & TRANSKRİPT İŞLEMLERİ ---
-  const handleUpdateGraduationGoals = (goalUpdates) => {
-    setData((prev) => ({
-      ...prev,
-      graduation: {
-        ...(prev.graduation || {}),
-        goals: {
-          ...(prev.graduation?.goals || {}),
-          ...goalUpdates,
-        },
-      },
-    }));
-  };
-
-  const handleAddTranscriptCourse = (courseItem) => {
-    const newItem = {
-      id: `tr-${Date.now()}`,
-      ...courseItem,
-    };
-    setData((prev) => ({
-      ...prev,
-      graduation: {
-        ...(prev.graduation || {}),
-        transcriptCourses: [
-          newItem,
-          ...(prev.graduation?.transcriptCourses || []),
-        ],
-      },
-    }));
-    showNotification(`${newItem.code} transkripte eklendi.`);
-  };
-
-  const handleDeleteTranscriptCourse = (id) => {
-    setData((prev) => ({
-      ...prev,
-      graduation: {
-        ...(prev.graduation || {}),
-        transcriptCourses: (prev.graduation?.transcriptCourses || []).filter(
-          (item) => item.id !== id
-        ),
-      },
-    }));
-  };
-
-  const handleImportTranscriptCourses = (items, mode = 'append') => {
-    setData((prev) => ({
-      ...prev,
-      graduation: {
-        ...(prev.graduation || {}),
-        transcriptCourses:
-          mode === 'replace'
-            ? items
-            : [...items, ...(prev.graduation?.transcriptCourses || [])],
-      },
-    }));
-    showNotification(`${items.length} transkript dersi başarıyla aktarıldı!`);
-  };
-
-  // --- 7. JSON YEDEKLEME (EXPORT) & GERİ YÜKLEME (IMPORT) ---
-  const handleExportJson = () => {
-    const exportPayload = {
-      exportedAt: new Date().toISOString(),
-      userEmail: currentUser?.email || '',
-      app: 'Akademik Ders ve Sınav Takip Merkezi',
-      version: '3.0.0',
-      ...data,
-    };
-    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    const datePart = new Date().toISOString().slice(0, 10);
-    link.href = url;
-    link.download = `akademik-takip-${currentUser?.email || 'yedek'}-${datePart}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showNotification('Kişisel verileriniz JSON olarak indirildi.');
-  };
-
-  const handleImportJson = (file) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(String(event.target?.result || '{}'));
-        if (
-          !Array.isArray(parsed.courses) ||
-          !Array.isArray(parsed.assignments) ||
-          !Array.isArray(parsed.topics) ||
-          !Array.isArray(parsed.exams)
-        ) {
-          throw new Error(
-            'Geçersiz JSON şeması: courses, assignments, topics ve exams dizileri gereklidir.'
-          );
-        }
-        setData((prev) => ({
-          ...prev,
-          courses: parsed.courses,
-          assignments: parsed.assignments,
-          topics: parsed.topics,
-          exams: parsed.exams,
-          graduation: parsed.graduation || prev.graduation,
-          knowledgeCards: parsed.knowledgeCards || prev.knowledgeCards || [],
-        }));
-        setSelectedCourseId('all');
-        showNotification('JSON yedeği hesabınıza başarıyla yüklendi!');
-      } catch (err) {
-        showNotification(
-          `JSON yükleme hatası: ${err.message || 'Dosya okunamadı'}`,
-          'error'
-        );
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  // --- ARAMA VE DERS FİLTRESİ ---
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
+  // Seçili derse göre filtreleme
   const filteredCourses = useMemo(() => {
-    return data.courses.filter((c) => {
-      if (selectedCourseId !== 'all' && c.id !== selectedCourseId) return false;
-      if (!normalizedQuery) return true;
-      return (
-        c.code.toLowerCase().includes(normalizedQuery) ||
-        c.name.toLowerCase().includes(normalizedQuery) ||
-        (c.instructor || '').toLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [data.courses, selectedCourseId, normalizedQuery]);
-
-  const filteredAssignments = useMemo(() => {
-    return data.assignments.filter((a) => {
-      if (selectedCourseId !== 'all' && a.courseId !== selectedCourseId)
-        return false;
-      if (!normalizedQuery) return true;
-      return (
-        a.title.toLowerCase().includes(normalizedQuery) ||
-        (a.description || '').toLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [data.assignments, selectedCourseId, normalizedQuery]);
-
-  const filteredTopics = useMemo(() => {
-    return data.topics.filter((t) => {
-      if (selectedCourseId !== 'all' && t.courseId !== selectedCourseId)
-        return false;
-      if (!normalizedQuery) return true;
-      return (
-        t.title.toLowerCase().includes(normalizedQuery) ||
-        (t.unit || '').toLowerCase().includes(normalizedQuery) ||
-        (t.notes || '').toLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [data.topics, selectedCourseId, normalizedQuery]);
+    if (selectedCourseId === 'all') return data.courses;
+    return data.courses.filter((c) => c.id === selectedCourseId);
+  }, [data.courses, selectedCourseId]);
 
   const filteredExams = useMemo(() => {
-    return data.exams.filter((e) => {
-      if (selectedCourseId !== 'all' && e.courseId !== selectedCourseId)
-        return false;
-      if (!normalizedQuery) return true;
-      return (
-        e.examType.toLowerCase().includes(normalizedQuery) ||
-        (e.location || '').toLowerCase().includes(normalizedQuery) ||
-        (e.cheatsheetContent || '').toLowerCase().includes(normalizedQuery) ||
-        (e.scopeTopics || []).some((s) =>
-          s.toLowerCase().includes(normalizedQuery)
-        )
-      );
-    });
-  }, [data.exams, selectedCourseId, normalizedQuery]);
+    if (selectedCourseId === 'all') return data.exams;
+    return data.exams.filter((e) => e.courseId === selectedCourseId);
+  }, [data.exams, selectedCourseId]);
 
-  // Oturum açılmamışsa Giriş Yap / Kayıt Ol (Sign In & Sign Up) ekranını göster
+  // Oturum açılmamışsa Giriş Yap / Kayıt Ol ekranını göster
   if (!currentUser) {
     return (
       <AuthScreen
@@ -817,10 +346,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc] text-slate-700">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#F3F0FF] via-[#EDE9FE] to-[#F3F0FF] pb-28 text-slate-700">
       {/* Pastel Bildirim Toast */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/95 px-4 py-2.5 text-xs font-medium text-slate-700 shadow-lg backdrop-blur-md">
+        <div className="fixed bottom-24 right-5 z-50 flex items-center gap-2.5 rounded-full border border-white/95 bg-white/95 px-4 py-2.5 text-xs font-bold text-slate-700 shadow-habitz backdrop-blur-md">
           {toast.type === 'error' ? (
             <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
           ) : (
@@ -830,143 +359,178 @@ export default function App() {
         </div>
       )}
 
-      {/* Acil Bildirim & Giriş Yapılan E-postaya Özel 24 Saat Hatırlatma Çekmecesi */}
-      <NotificationCenterDrawer
-        isOpen={isNotificationDrawerOpen}
-        onClose={() => setIsNotificationDrawerOpen(false)}
-        currentUser={currentUser}
-        urgentAlerts={urgentAlerts}
-        smartRecommendations={smartRecommendations}
-        notificationPermission={notificationPermission}
-        onRequestPermission={handleRequestNotificationPermission}
-        onTriggerDailyStudyNotification={handleTriggerDailyStudyNotification}
-        notificationSettings={data.notificationSettings}
-        onUpdateNotificationSettings={handleUpdateNotificationSettings}
-        notificationHistory={data.notificationHistory || []}
-        onSendUrgentEmail={handleSendUrgentEmail}
-        onClearNotificationHistory={handleClearNotificationHistory}
-        onNavigateToAlert={handleNavigateToAlert}
-      />
-
-      {/* Üst Menü */}
+      {/* Minimalist ve Sevimli Yeni Üst Başlık + Yüzen Alt Menü (Floating Dock) */}
       <Header
         currentUser={currentUser}
         onSignOut={handleSignOut}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        selectedCourseId={selectedCourseId}
-        setSelectedCourseId={setSelectedCourseId}
-        courses={data.courses}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onExportJson={handleExportJson}
-        onImportJson={handleImportJson}
-        urgentAlertCount={urgentAlerts.length}
-        onOpenNotifications={() => setIsNotificationDrawerOpen(true)}
+        setActiveTab={(tab) => {
+          setActiveTab(tab);
+          setConfirmReset(false);
+        }}
       />
 
       {/* Ferah Ana İçerik Alanı */}
-      <main className="mx-auto w-full max-w-6xl flex-1 space-y-10 px-4 py-8 sm:px-6 lg:px-8">
-        {/* İlk Giriş Boş Durum (Empty State) Rehber Kartı */}
-        {data.courses.length === 0 && (
+      <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-4 sm:px-6 lg:px-8">
+        {/* 🏠 GENEL BAKIŞ: Merkezi "Hoş Geldiniz" Kartı ve 3 Adımlı Rehber */}
+        {activeTab === 'all' && (
           <WelcomeEmptyState
             userName={currentUser.name}
             userEmail={currentUser.email}
+            courseCount={data.courses.length}
+            examCount={data.exams.length}
             onStartAddCourse={handleStartFirstCourse}
             onNavigateTab={setActiveTab}
           />
         )}
 
-        {/* Genel Bakış Sayaçları + "Bugün Neye Odaklanmalıyım?" Akıllı Öneri Kartı */}
-        <DashboardStats
-          courses={data.courses}
-          assignments={data.assignments}
-          topics={data.topics}
-          exams={data.exams}
-          graduation={data.graduation}
-          onUpdateTopicStatus={(topicId, newStatus) =>
-            handleUpdateTopic(topicId, { status: newStatus })
-          }
-          onNavigateToSection={(sectionId) => setActiveTab(sectionId)}
-          onTriggerDailyStudyNotification={handleTriggerDailyStudyNotification}
-        />
+        {/* 👤 PROFİL: Kullanıcı Bilgileri ve Veri Sıfırlama */}
+        {activeTab === 'profile' && (
+          <section className="rounded-3xl border border-white/95 bg-white p-6 sm:p-8 shadow-habitz">
+            <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-[#F5F3FF] to-[#EDE9FE] border border-[#C4B5FD]/60">
+                  <FlameMascot className="h-12 w-12" />
+                </div>
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-0.5 text-[11px] font-bold text-purple-700">
+                    Aktif Öğrenci Profili
+                  </span>
+                  <h2 className="mt-1 text-lg font-extrabold text-slate-800">
+                    {currentUser.name || 'Öğrenci'}
+                  </h2>
+                  <p className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                    <Mail className="h-3.5 w-3.5 text-purple-600" />
+                    <span>{currentUser.email}</span>
+                  </p>
+                </div>
+              </div>
 
-        {/* Ana Ekranda Hızlı Bilgi ve Formül Kartları (Knowledge Widgets) */}
-        {activeTab === 'all' && (
-          <KnowledgeWidgets
-            knowledgeCards={data.knowledgeCards || []}
-            courses={data.courses}
-            exams={data.exams}
-            onSelectCard={handleSelectKnowledgeCard}
-            onAddKnowledgeCard={handleAddKnowledgeCard}
-            onDeleteKnowledgeCard={handleDeleteKnowledgeCard}
-          />
+              <div className="flex flex-wrap items-center gap-2.5">
+                {!confirmReset ? (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmReset(true)}
+                    className="inline-flex items-center gap-1.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-900 transition hover:bg-amber-100"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
+                    <span>Verileri Sıfırla</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-1.5">
+                    <span className="text-xs font-bold text-rose-800">
+                      Tüm veriler silinsin mi?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleResetAllData}
+                      className="rounded-xl bg-rose-500 px-3 py-1 text-xs font-bold text-white hover:bg-rose-600"
+                    >
+                      Evet, Sıfırla
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmReset(false)}
+                      className="rounded-xl bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                    >
+                      Vazgeç
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="inline-flex items-center gap-1.5 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-2.5 text-xs font-bold text-rose-800 transition hover:bg-rose-100"
+                >
+                  <LogOut className="h-3.5 w-3.5 text-rose-500" />
+                  <span>Çıkış Yap</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Hızlı Modül Geçiş Kartları */}
+            <div className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setActiveTab('courses')}
+                className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50/50 p-4 text-left transition hover:border-purple-300"
+              >
+                <BookOpen className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="text-xs font-extrabold text-slate-800">
+                    Ders & Arşiv
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {data.courses.length} kayıtlı ders
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('schedule')}
+                className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50/50 p-4 text-left transition hover:border-sky-300"
+              >
+                <CalendarDays className="h-5 w-5 text-sky-600" />
+                <div>
+                  <p className="text-xs font-extrabold text-slate-800">
+                    Haftalık Program
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Gün ve saat sıralı akış
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('exams')}
+                className="flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/50 p-4 text-left transition hover:border-rose-300"
+              >
+                <FileSpreadsheet className="h-5 w-5 text-rose-500" />
+                <div>
+                  <p className="text-xs font-extrabold text-slate-800">
+                    Sınavlar & Sonuçlar
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {data.exams.length} sınav kaydı
+                  </p>
+                </div>
+              </button>
+            </div>
+          </section>
         )}
 
-        {/* Merkezi Sınav Takvimi ve Canlı Geri Sayım */}
-        {(activeTab === 'all' || activeTab === 'exams') && (
-          <ExamCountdownHub
-            exams={filteredExams}
-            courses={data.courses}
-            onSelectExam={handleSelectExamFromCountdown}
-          />
-        )}
-
-        {/* Mezuniyet Şartları & Transkript & Olası GANO Simülatörü */}
-        {(activeTab === 'all' || activeTab === 'graduation') && (
-          <GraduationTranscriptSection
-            courses={data.courses}
-            graduation={data.graduation}
-            onUpdateCourse={handleUpdateCourse}
-            onUpdateGraduationGoals={handleUpdateGraduationGoals}
-            onAddTranscriptCourse={handleAddTranscriptCourse}
-            onDeleteTranscriptCourse={handleDeleteTranscriptCourse}
-            onImportTranscriptCourses={handleImportTranscriptCourses}
-          />
-        )}
-
-        {/* 1. Ders Yönetimi ve Not Ağırlıkları */}
+        {/* 📚 DERS & ARŞİV: Zorunlu/Seçmeli Dersler, 0 Kredi/AKTS ve PDF/Not Arşivi */}
         {(activeTab === 'all' || activeTab === 'courses') && (
           <CoursesSection
             courses={filteredCourses}
             onAddCourse={handleAddCourse}
             onUpdateCourse={handleUpdateCourse}
             onDeleteCourse={handleDeleteCourse}
-            onAddCourseLink={handleAddCourseLink}
-            onDeleteCourseLink={handleDeleteCourseLink}
             onSelectCourseFilter={setSelectedCourseId}
             selectedCourseId={selectedCourseId}
             forceOpenCreateCounter={forceOpenCourseFormCounter}
+            onNotify={showNotification}
           />
         )}
 
-        {/* 2. Ödev ve Proje Takipçisi */}
-        {(activeTab === 'all' || activeTab === 'assignments') && (
-          <AssignmentsSection
-            assignments={filteredAssignments}
-            courses={data.courses}
-            onAddAssignment={handleAddAssignment}
-            onUpdateAssignment={handleUpdateAssignment}
-            onDeleteAssignment={handleDeleteAssignment}
+        {/* 🗓️ PROGRAM: Haftalık Ders Programı */}
+        {(activeTab === 'all' || activeTab === 'schedule') && (
+          <WeeklyScheduleSection
+            courses={filteredCourses}
+            onSelectCourse={(courseId) => {
+              setSelectedCourseId(
+                selectedCourseId === courseId ? 'all' : courseId
+              );
+              setActiveTab('courses');
+            }}
+            onOpenAddCourse={handleStartFirstCourse}
           />
         )}
 
-        {/* 3. Çalışma Planı (Study Tracker) */}
-        {(activeTab === 'all' || activeTab === 'study') && (
-          <StudyTrackerSection
-            topics={filteredTopics}
-            courses={
-              selectedCourseId === 'all'
-                ? data.courses
-                : data.courses.filter((c) => c.id === selectedCourseId)
-            }
-            onAddTopic={handleAddTopic}
-            onUpdateTopic={handleUpdateTopic}
-            onDeleteTopic={handleDeleteTopic}
-          />
-        )}
-
-        {/* 4. Sınav Detayları ve Cheatsheet Merkezi */}
+        {/* 📝 SINAVLAR: Sınav Takvimi ve 0–100 Sınav Sonuçları */}
         {(activeTab === 'all' || activeTab === 'exams') && (
           <ExamsCheatsheetSection
             exams={filteredExams}
@@ -975,24 +539,10 @@ export default function App() {
             onUpdateExam={handleUpdateExam}
             onDeleteExam={handleDeleteExam}
             highlightedExamId={highlightedExamId}
+            onNotify={showNotification}
           />
         )}
       </main>
-
-      {/* Minimal Alt Bilgi */}
-      <footer className="mt-12 border-t border-slate-200/70 bg-white/70 py-5 text-center text-xs text-slate-400">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 sm:flex-row">
-          <span>
-            Akademik Ders ve Sınav Takip Merkezi • Aktif Hesap:{' '}
-            <code className="font-mono text-slate-600">
-              {getUserStorageKey(currentUser.email)}
-            </code>
-          </span>
-          <span>
-            Aydınlık Pastel Minimalist Arayüz • Çok Kullanıcılı Kişisel Hafıza
-          </span>
-        </div>
-      </footer>
     </div>
   );
 }
